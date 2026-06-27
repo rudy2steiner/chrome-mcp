@@ -9,7 +9,7 @@ import {
   ListResourcesRequestSchema,
   ListPromptsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { TOOL_SCHEMAS } from 'chrome-mcp-shared';
+import { TOOL_SCHEMAS } from 'agent-chrome-mcp-shared';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import * as fs from 'fs';
@@ -85,7 +85,7 @@ async function ensureNativeMessagingRegistration(): Promise<void> {
     writeNodePathFile(path.join(__dirname, '..'));
     await tryRegisterUserLevelHost();
   } catch (error) {
-    console.error('Chrome MCP auto-registration skipped:', error);
+    console.error('Agent Chrome MCP auto-registration skipped:', error);
   } finally {
     console.log = originalLog;
   }
@@ -139,6 +139,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('Fatal error Chrome MCP Server main():', error);
+  console.error('Fatal error Agent Chrome MCP main():', error);
   process.exit(1);
 });

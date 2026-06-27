@@ -174,12 +174,12 @@
       </label>
     </div>
 
-    <!-- Chrome MCP Option - only shown when Claude or Codex CLI is selected -->
+    <!-- Agent Chrome MCP Option - only shown when Claude or Codex CLI is selected -->
     <div v-if="showChromeMcpOption" class="px-3 py-2 flex items-center gap-2">
       <span class="text-xs w-12" :style="{ color: 'var(--ac-text-muted, #6e6e6e)' }"> MCP </span>
       <label
         class="flex items-center gap-2 cursor-pointer"
-        title="Enable local Chrome MCP server integration"
+        title="Enable local Agent Chrome MCP server integration"
       >
         <input
           type="checkbox"
@@ -191,7 +191,7 @@
           @change="handleChromeMcpChange"
         />
         <span class="text-xs" :style="{ color: 'var(--ac-text, #1a1a1a)' }">
-          Enable Chrome MCP
+          Enable Agent Chrome MCP
         </span>
       </label>
     </div>
@@ -221,7 +221,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { AgentProject, AgentEngineInfo, CodexReasoningEffort } from 'chrome-mcp-shared';
+import type { AgentProject, AgentEngineInfo, CodexReasoningEffort } from 'agent-chrome-mcp-shared';
 import {
   getModelsForCli,
   getDefaultModelForCli,
@@ -251,7 +251,7 @@ const emit = defineEmits<{
   'model:update': [model: string];
   'reasoning-effort:update': [effort: CodexReasoningEffort];
   'ccr:update': [useCcr: boolean];
-  'chrome-mcp:update': [enableChromeMcp: boolean];
+  'agent-chrome-mcp:update': [enableChromeMcp: boolean];
   save: [];
 }>();
 
@@ -305,7 +305,7 @@ const showCcrOption = computed(() => {
   return props.selectedCli === 'claude';
 });
 
-// Show Chrome MCP option when Claude, Codex, or Auto (empty) CLI is selected
+// Show Agent Chrome MCP option when Claude, Codex, or Auto (empty) CLI is selected
 // Auto typically defaults to Claude, and users should be able to manage this project-level setting
 const showChromeMcpOption = computed(() => {
   return !props.selectedCli || props.selectedCli === 'claude' || props.selectedCli === 'codex';
@@ -338,7 +338,7 @@ function handleCcrChange(event: Event): void {
 }
 
 function handleChromeMcpChange(event: Event): void {
-  emit('chrome-mcp:update', (event.target as HTMLInputElement).checked);
+  emit('agent-chrome-mcp:update', (event.target as HTMLInputElement).checked);
 }
 
 function handleModelChange(event: Event): void {

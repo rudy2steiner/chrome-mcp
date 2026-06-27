@@ -1,6 +1,6 @@
 import { createErrorResponse, ToolResult } from '@/common/tool-handler';
 import { BaseBrowserToolExecutor } from '../base-browser';
-import { TOOL_NAMES } from 'chrome-mcp-shared';
+import { TOOL_NAMES } from 'agent-chrome-mcp-shared';
 import { ExecutionWorld, STORAGE_KEYS } from '@/common/constants';
 import { cdpSessionManager } from '@/utils/cdp-session-manager';
 
@@ -254,7 +254,7 @@ async function injectJsPersistent(
     const wrapped = `(() => {
       try {
         // Optional command API: window.__userscript_onCommand(action, payload)
-        window.addEventListener('chrome-mcp:execute', (ev) => {
+        window.addEventListener('agent-chrome-mcp:execute', (ev) => {
           const { action, payload, requestId } = ev.detail || {};
           try {
             let result;
@@ -262,9 +262,9 @@ async function injectJsPersistent(
             if (typeof handler === 'function') {
               result = handler(action, payload);
             }
-            window.dispatchEvent(new CustomEvent('chrome-mcp:response', { detail: { requestId, data: result } }));
+            window.dispatchEvent(new CustomEvent('agent-chrome-mcp:response', { detail: { requestId, data: result } }));
           } catch (err) {
-            window.dispatchEvent(new CustomEvent('chrome-mcp:response', { detail: { requestId, error: String(err && (err as any).message || err) } }));
+            window.dispatchEvent(new CustomEvent('agent-chrome-mcp:response', { detail: { requestId, error: String(err && (err as any).message || err) } }));
           }
         });
         (new Function(${JSON.stringify(code)}))();
@@ -693,7 +693,7 @@ class UserscriptTool extends BaseBrowserToolExecutor {
           await removeCssFromTab(active.id, rec.script, rec.allFrames);
         } else {
           // Send cleanup signal via bridge (MAIN) or ignore if isolated
-          chrome.tabs.sendMessage(active.id, { type: 'chrome-mcp:cleanup' }).catch(() => {});
+          chrome.tabs.sendMessage(active.id, { type: 'agent-chrome-mcp:cleanup' }).catch(() => {});
         }
         clearActiveInjection(active.id, rec.id);
       } catch (err) {

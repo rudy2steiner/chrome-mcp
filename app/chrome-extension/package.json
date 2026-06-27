@@ -1,9 +1,9 @@
 {
-  "name": "chrome-mcp-server",
+  "name": "agent-chrome-mcp-extension",
   "description": "a chrome extension to use your own chrome as a mcp server",
   "author": "hangye",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.32",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -28,7 +28,7 @@
     "@vue-flow/core": "^1.47.0",
     "@vue-flow/minimap": "^1.5.4",
     "@xenova/transformers": "^2.17.2",
-    "chrome-mcp-shared": "workspace:*",
+    "agent-chrome-mcp-shared": "workspace:*",
     "date-fns": "^4.1.0",
     "elkjs": "^0.11.0",
     "gifenc": "^1.0.3",
@@ -48,8 +48,9 @@
     "tailwindcss": "^4.0.0",
     "unplugin-icons": "^0.19.0",
     "unplugin-vue-components": "^0.27.5",
+    "vite": "^7.2.7",
     "vite-plugin-static-copy": "^3.0.0",
-    "vitest": "^2.1.8",
+    "vitest": "^3.2.4",
     "vue-tsc": "^2.2.8",
     "wxt": "^0.20.0"
   }

@@ -4,7 +4,7 @@
     <div v-show="currentView === 'home'" class="home-view">
       <div class="header">
         <div class="header-content">
-          <h1 class="header-title">Chrome MCP</h1>
+          <h1 class="header-title">Agent Chrome MCP</h1>
         </div>
       </div>
       <div class="content">
@@ -333,7 +333,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { NativeMessageType } from 'chrome-mcp-shared';
+import { NativeMessageType } from 'agent-chrome-mcp-shared';
 import {
   PREDEFINED_MODELS,
   type ModelPreset,
@@ -536,7 +536,7 @@ const mcpConfigJson = computed(() => {
   const port = serverStatus.value.port || nativeServerPort.value;
   const config = {
     mcpServers: {
-      'streamable-mcp-server': {
+      'agent-chrome-mcp': {
         type: 'streamable-http',
         url: `http://127.0.0.1:${port}/mcp`,
       },
