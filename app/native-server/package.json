@@ -1,12 +1,11 @@
 {
-  "name": "mcp-chrome-bridge",
-  "version": "1.0.29",
+  "name": "agent-chrome-mcp",
+  "version": "1.0.32",
   "description": "Chrome Native-Messaging host (Node)",
   "main": "dist/index.js",
   "bin": {
-    "mcp-chrome-bridge": "./dist/cli.js",
-    "chrome-mcp-bridge": "./dist/cli.js",
-    "mcp-chrome-stdio": "./dist/mcp/mcp-server-stdio.js"
+    "agent-chrome-mcp": "./dist/cli.js",
+    "agent-chrome-mcp-stdio": "./dist/mcp/mcp-server-stdio.js"
   },
   "scripts": {
     "dev": "nodemon --watch src --ext ts,js,json --ignore dist/ --exec \"npm run build && npm run register:dev\"",
@@ -42,7 +41,7 @@
     "better-sqlite3": "^11.6.0",
     "chalk": "^5.4.1",
     "chrome-devtools-frontend": "^1.0.1299282",
-    "chrome-mcp-shared": "workspace:*",
+    "agent-chrome-mcp-shared": "workspace:*",
     "commander": "^13.1.0",
     "drizzle-orm": "^0.38.2",
     "fastify": "^5.3.2",

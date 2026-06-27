@@ -1,9 +1,8 @@
 import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
+import { existsSync, readdirSync, statSync } from 'fs';
 import Icons from 'unplugin-icons/vite';
 import Components from 'unplugin-vue-components/vite';
 import IconsResolver from 'unplugin-icons/resolver';
@@ -11,7 +10,7 @@ import IconsResolver from 'unplugin-icons/resolver';
 config({ path: resolve(process.cwd(), '.env') });
 config({ path: resolve(process.cwd(), '.env.local') });
 
-// Stable public key for the local "Chrome MCP" extension identity.
+// Stable public key for the local "Agent Chrome MCP" extension identity.
 // This makes unpacked installs use a fixed extension ID instead of the path-derived
 // ID, so the native host can register against a predictable origin.
 const DEFAULT_CHROME_MCP_EXTENSION_KEY =
@@ -20,21 +19,48 @@ const CHROME_EXTENSION_KEY = process.env.CHROME_EXTENSION_KEY || DEFAULT_CHROME_
 // Detect dev mode early for manifest-level switches
 const IS_DEV = process.env.NODE_ENV !== 'production' && process.env.MODE !== 'production';
 
-function copyStaticAssetsEarly(): void {
-  const outDir = resolve(process.cwd(), '.output/chrome-mv3');
-  for (const target of ['inject-scripts', 'workers', '_locales']) {
-    const src = resolve(process.cwd(), target);
-    const dest = resolve(outDir, target);
-    if (!existsSync(src)) continue;
-    mkdirSync(outDir, { recursive: true });
-    rmSync(dest, { recursive: true, force: true });
-    cpSync(src, dest, { recursive: true });
+function collectPublicAssetFiles(
+  baseDir: string,
+): Array<{ absoluteSrc: string; relativeDest: string }> {
+  const files: Array<{ absoluteSrc: string; relativeDest: string }> = [];
+  const absoluteBase = resolve(process.cwd(), baseDir);
+  if (!existsSync(absoluteBase)) return files;
+
+  const walk = (currentDir: string, relativeDir: string) => {
+    for (const entry of readdirSync(currentDir)) {
+      const absolutePath = resolve(currentDir, entry);
+      const relativePath = relativeDir ? `${relativeDir}/${entry}` : entry;
+      if (statSync(absolutePath).isDirectory()) {
+        walk(absolutePath, relativePath);
+      } else {
+        files.push({
+          absoluteSrc: absolutePath,
+          relativeDest: `${baseDir}/${relativePath}`,
+        });
+      }
+    }
+  };
+
+  walk(absoluteBase, '');
+  return files;
+}
+
+function collectRuntimePublicAssets(): Array<{ absoluteSrc: string; relativeDest: string }> {
+  const files: Array<{ absoluteSrc: string; relativeDest: string }> = [];
+  for (const baseDir of ['inject-scripts', 'workers', '_locales']) {
+    files.push(...collectPublicAssetFiles(baseDir));
   }
+  return files;
 }
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
+  hooks: {
+    'build:publicAssets': (_wxt, files) => {
+      files.push(...collectRuntimePublicAssets());
+    },
+  },
   runner: {
     // 方案1: 禁用自动启动（推荐）
     disabled: true,
@@ -81,7 +107,7 @@ export default defineConfig({
     },
     action: {
       default_popup: 'popup.html',
-      default_title: 'Chrome MCP',
+      default_title: 'Agent Chrome MCP',
     },
     // Chrome Side Panel entry for workflow management
     // Ref: https://developer.chrome.com/docs/extensions/reference/api/sidePanel
@@ -149,33 +175,6 @@ export default defineConfig({
         resolvers: [IconsResolver({ prefix: 'i', enabledCollections: ['lucide', 'mdi', 'ri'] })],
       }) as any,
       Icons({ compiler: 'vue3', autoInstall: false }) as any,
-      {
-        name: 'chrome-mcp-copy-static-assets-early',
-        buildStart() {
-          copyStaticAssetsEarly();
-        },
-      },
-      // Ensure static assets are available as early as possible to avoid race conditions in dev
-      // Copy workers/_locales/inject-scripts into the build output before other steps
-      viteStaticCopy({
-        targets: [
-          {
-            src: 'inject-scripts/*.js',
-            dest: 'inject-scripts',
-          },
-          {
-            src: ['workers/*'],
-            dest: 'workers',
-          },
-        ],
-        // Use writeBundle so outDir exists for dev and prod
-        hook: 'writeBundle',
-        // Enable watch so changes to these files are reflected during dev
-        watch: {
-          // Use default patterns inferred from targets; explicit true enables watching
-          // Vite plugin will watch src patterns and re-copy on change
-        } as any,
-      }) as any,
     ],
     build: {
       // 我们的构建产物需要兼容到es6

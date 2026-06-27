@@ -1,4 +1,4 @@
-import { TOOL_NAMES } from 'chrome-mcp-shared';
+import { TOOL_NAMES } from 'agent-chrome-mcp-shared';
 
 type OwnerTag = string;
 

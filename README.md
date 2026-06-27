@@ -1,10 +1,10 @@
-# Chrome MCP Server 🚀
+# Agent Chrome MCP 🚀
 
-[![Stars](https://img.shields.io/github/stars/hangwin/mcp-chrome)](https://img.shields.io/github/stars/hangwin/mcp-chrome)
+[![Stars](https://img.shields.io/github/stars/rudy2steiner/chrome-mcp)](https://img.shields.io/github/stars/rudy2steiner/chrome-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://www.typescriptlang.org/)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://developer.chrome.com/docs/extensions/)
-[![Release](https://img.shields.io/github/v/release/hangwin/mcp-chrome.svg)](https://img.shields.io/github/v/release/hangwin/mcp-chrome.svg)
+[![Release](https://img.shields.io/github/v/release/rudy2steiner/chrome-mcp.svg)](https://img.shields.io/github/v/release/rudy2steiner/chrome-mcp.svg)
 
 > 🌟 **Turn your Chrome browser into your intelligent assistant** - Let AI take control of your browser, transforming it into a powerful AI-controlled automation tool.
 
@@ -14,9 +14,9 @@
 
 ---
 
-## 🎯 What is Chrome MCP Server?
+## 🎯 What is Agent Chrome MCP?
 
-Chrome MCP Server is a Chrome extension-based **Model Context Protocol (MCP) server** that exposes your Chrome browser functionality to AI assistants like Claude, enabling complex browser automation, content analysis, and semantic search. Unlike traditional browser automation tools (like Playwright), **Chrome MCP Server** directly uses your daily Chrome browser, leveraging existing user habits, configurations, and login states, allowing various large models or chatbots to take control of your browser and truly become your everyday assistant.
+Agent Chrome MCP is a Chrome extension-based **Model Context Protocol (MCP) server** that exposes your Chrome browser functionality to AI assistants like Claude, enabling complex browser automation, content analysis, and semantic search. Unlike traditional browser automation tools (like Playwright), **Agent Chrome MCP** directly uses your daily Chrome browser, leveraging existing user habits, configurations, and login states, allowing various large models or chatbots to take control of your browser and truly become your everyday assistant.
 
 ## ✨ New Features(2025/12/30)
 
@@ -56,14 +56,14 @@ Chrome MCP Server is a Chrome extension-based **Model Context Protocol (MCP) ser
 
 1. **Download the latest Chrome extension from GitHub**
 
-Download link: https://github.com/hangwin/mcp-chrome/releases
+Download link: https://github.com/rudy2steiner/chrome-mcp/releases
 
-2. **Install mcp-chrome-bridge globally**
+2. **Install agent-chrome-mcp globally**
 
 npm
 
 ```bash
-npm install -g mcp-chrome-bridge
+npm install -g agent-chrome-mcp
 ```
 
 pnpm
@@ -71,11 +71,11 @@ pnpm
 ```bash
 # Method 1: Enable scripts globally (recommended)
 pnpm config set enable-pre-post-scripts true
-pnpm install -g mcp-chrome-bridge
+pnpm install -g agent-chrome-mcp
 
 # Method 2: Manual registration (if postinstall doesn't run)
-pnpm install -g mcp-chrome-bridge
-mcp-chrome-bridge register
+pnpm install -g agent-chrome-mcp
+agent-chrome-mcp register
 ```
 
 > Note: pnpm v7+ disables postinstall scripts by default for security. The `enable-pre-post-scripts` setting controls whether pre/post install scripts run. If automatic registration fails, use the manual registration command above.
@@ -84,20 +84,20 @@ mcp-chrome-bridge register
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode"
    - Click "Load unpacked" and select `your/dowloaded/extension/folder`
-   - Click the extension icon once. Chrome MCP will start the local bridge automatically.
+   - Click the extension icon once. Agent Chrome MCP will start the local bridge automatically.
      <img width="475" alt="Screenshot 2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
 ### Usage with MCP Protocol Clients
 
 #### Using STDIO Connection (Recommended)
 
-Add Chrome MCP as a normal stdio MCP server. The stdio entry point performs a best-effort Native Messaging registration on startup, so users do not need to know or copy the Chrome extension ID.
+Add Agent Chrome MCP as a normal stdio MCP server. The stdio entry point performs a best-effort Native Messaging registration on startup, so users do not need to know or copy the Chrome extension ID.
 
 ```json
 {
   "mcpServers": {
-    "chrome-mcp": {
-      "command": "mcp-chrome-stdio",
+    "agent-chrome-mcp": {
+      "command": "agent-chrome-mcp-stdio",
       "args": []
     }
   }
@@ -109,9 +109,9 @@ If your MCP client cannot resolve global npm binaries, use `npx`:
 ```json
 {
   "mcpServers": {
-    "chrome-mcp": {
+    "agent-chrome-mcp": {
       "command": "npx",
-      "args": ["-y", "--package", "mcp-chrome-bridge", "mcp-chrome-stdio"]
+      "args": ["-y", "--package", "agent-chrome-mcp", "agent-chrome-mcp-stdio"]
     }
   }
 }
@@ -122,7 +122,7 @@ If your MCP client cannot resolve global npm binaries, use `npx`:
 ```json
 {
   "mcpServers": {
-    "chrome-mcp-server": {
+    "agent-chrome-mcp-extension": {
       "type": "streamableHttp",
       "url": "http://127.0.0.1:12307/mcp"
     }
@@ -277,7 +277,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for
 
 ## 🚧 Future Roadmap
 
-We have exciting plans for the future development of Chrome MCP Server:
+We have exciting plans for the future development of Agent Chrome MCP:
 
 - [ ] Authentication
 - [ ] Recording and Playback

@@ -13,8 +13,8 @@
  * @see https://developer.chrome.com/docs/extensions/mv3/service_workers/
  */
 
-import type { AgentActRequest, RealtimeEvent } from 'chrome-mcp-shared';
-import { NativeMessageType } from 'chrome-mcp-shared';
+import type { AgentActRequest, RealtimeEvent } from 'agent-chrome-mcp-shared';
+import { NativeMessageType } from 'agent-chrome-mcp-shared';
 
 import { NATIVE_HOST, STORAGE_KEYS } from '@/common/constants';
 import {

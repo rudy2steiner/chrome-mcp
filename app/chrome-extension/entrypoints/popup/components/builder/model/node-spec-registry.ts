@@ -1,1 +1,1 @@
-export * from 'chrome-mcp-shared';
+export * from 'agent-chrome-mcp-shared';

@@ -1,4 +1,4 @@
-# Chrome MCP Server API Reference 📚
+# Agent Chrome MCP API Reference 📚
 
 Complete reference for all available tools and their parameters.
 

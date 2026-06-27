@@ -1,72 +1,162 @@
-# name: Build and Release Chrome Extension
+name: Build and Release Agent Chrome MCP
 
-# on:
-#   push:
-#     branches: [ master, develop ]
-#     paths:
-#       - 'app/chrome-extension/**'
-#   pull_request:
-#     branches: [ master ]
-#     paths:
-#       - 'app/chrome-extension/**'
-#   workflow_dispatch:
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag to create or update, for example v1.0.30'
+        required: true
+        type: string
 
-# jobs:
-#   build-extension:
-#     runs-on: ubuntu-latest
-    
-#     steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v4
-      
-#     - name: Setup Node.js
-#       uses: actions/setup-node@v4
-#       with:
-#         node-version: '18'
-#         cache: 'npm'
-#         cache-dependency-path: 'app/chrome-extension/package-lock.json'
-        
-#     - name: Install dependencies
-#       run: |
-#         cd app/chrome-extension
-#         npm ci
-        
-#     - name: Build extension
-#       run: |
-#         cd app/chrome-extension
-#         npm run build
-        
-#     - name: Create zip package
-#       run: |
-#         cd app/chrome-extension
-#         npm run zip
-        
-#     - name: Prepare release directory
-#       run: |
-#         mkdir -p releases/chrome-extension/latest
-#         mkdir -p releases/chrome-extension/$(date +%Y%m%d-%H%M%S)
-        
-#     - name: Copy release files
-#       run: |
-#         # Copy to latest
-#         cp app/chrome-extension/.output/chrome-mv3-prod.zip releases/chrome-extension/latest/chrome-mcp-server-latest.zip
-        
-#         # Copy to timestamped version
-#         TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-#         cp app/chrome-extension/.output/chrome-mv3-prod.zip releases/chrome-extension/$TIMESTAMP/chrome-mcp-server-$TIMESTAMP.zip
-        
-#     - name: Upload build artifacts
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: chrome-extension-build
-#         path: releases/chrome-extension/
-#         retention-days: 30
-        
-#     - name: Commit and push releases (if on main branch)
-#       if: github.ref == 'refs/heads/main'
-#       run: |
-#         git config --local user.email "action@github.com"
-#         git config --local user.name "GitHub Action"
-#         git add releases/
-#         git diff --staged --quiet || git commit -m "Auto-build: Update Chrome extension release [skip ci]"
-#         git push
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify npm publishing token
+        run: |
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "NPM_TOKEN is required so agent-chrome-mcp can be published before the GitHub release is created." >&2
+            exit 1
+          fi
+
+      - name: Build shared package
+        run: pnpm --filter agent-chrome-mcp-shared build
+
+      - name: Test native bridge
+        run: pnpm --filter agent-chrome-mcp test -- --runInBand
+
+      - name: Test Chrome extension
+        run: pnpm --filter agent-chrome-mcp-extension test
+
+      - name: Build native bridge
+        run: pnpm --filter agent-chrome-mcp build
+
+      - name: Build Chrome extension
+        run: pnpm --filter agent-chrome-mcp-extension build
+
+      - name: Zip Chrome extension
+        run: pnpm --filter agent-chrome-mcp-extension zip
+
+      - name: Configure npm auth
+        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+
+      - name: Publish shared package to npm
+        run: pnpm --filter agent-chrome-mcp-shared publish --access public --no-git-checks
+
+      - name: Prepare native package metadata for npm
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const nativePath = 'app/native-server/package.json';
+          const shared = JSON.parse(fs.readFileSync('packages/shared/package.json', 'utf8'));
+          const native = JSON.parse(fs.readFileSync(nativePath, 'utf8'));
+          native.dependencies['agent-chrome-mcp-shared'] = shared.version;
+          fs.writeFileSync(nativePath, `${JSON.stringify(native, null, 2)}\n`);
+          NODE
+
+      - name: Publish native bridge to npm
+        run: pnpm --filter agent-chrome-mcp publish --access public --no-git-checks
+
+      - name: Prepare release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          EXTENSION_ZIP="$(find app/chrome-extension/.output -maxdepth 1 -name '*.zip' -print -quit)"
+          if [ -z "${EXTENSION_ZIP}" ]; then
+            echo "No extension zip found in app/chrome-extension/.output" >&2
+            exit 1
+          fi
+          cp "${EXTENSION_ZIP}" release-artifacts/agent-chrome-mcp-extension.zip
+          cat > release-artifacts/agent-chrome-mcp-mcp-config.json <<'JSON'
+          {
+            "mcpServers": {
+              "agent-chrome-mcp": {
+                "command": "npx",
+                "args": ["-y", "--package", "agent-chrome-mcp", "agent-chrome-mcp-stdio"]
+              }
+            }
+          }
+          JSON
+
+      - name: Resolve release tag
+        id: release_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: Agent Chrome MCP ${{ steps.release_tag.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            release-artifacts/agent-chrome-mcp-extension.zip
+            release-artifacts/agent-chrome-mcp-mcp-config.json
+          body: |
+            ## Install
+
+            1. Download `agent-chrome-mcp-extension.zip` from this release and unzip it.
+            2. Open `chrome://extensions/` in Chrome.
+            3. Enable Developer mode.
+            4. Click Load unpacked and select the unzipped extension folder.
+            5. Add Agent Chrome MCP to your MCP client with either:
+
+            ```json
+            {
+              "mcpServers": {
+                "agent-chrome-mcp": {
+                  "command": "npx",
+                  "args": ["-y", "--package", "agent-chrome-mcp", "agent-chrome-mcp-stdio"]
+                }
+              }
+            }
+            ```
+
+            If you prefer a global install:
+
+            ```bash
+            npm install -g agent-chrome-mcp
+            ```
+
+            ```json
+            {
+              "mcpServers": {
+                "agent-chrome-mcp": {
+                  "command": "agent-chrome-mcp-stdio",
+                  "args": []
+                }
+              }
+            }
+            ```
+
+            The HTTP endpoint is `http://127.0.0.1:12307/mcp` after the extension starts the local bridge.

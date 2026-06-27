@@ -59,7 +59,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AgentProject, AgentEngineInfo } from 'chrome-mcp-shared';
+import type { AgentProject, AgentEngineInfo } from 'agent-chrome-mcp-shared';
 import CliSettings from './CliSettings.vue';
 
 defineProps<{

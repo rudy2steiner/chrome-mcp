@@ -106,7 +106,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import type { AgentUsageStats } from 'chrome-mcp-shared';
+import type { AgentUsageStats } from 'agent-chrome-mcp-shared';
 
 defineProps<{
   errorMessage?: string | null;

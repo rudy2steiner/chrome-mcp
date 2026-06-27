@@ -1,5 +1,5 @@
 import type { AgentAttachment, RealtimeEvent } from '../types';
-import type { CodexEngineConfig } from 'chrome-mcp-shared';
+import type { CodexEngineConfig } from 'agent-chrome-mcp-shared';
 
 export interface EngineInitOptions {
   sessionId: string;

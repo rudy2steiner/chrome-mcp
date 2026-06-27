@@ -5,7 +5,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import nativeMessagingHostInstance from '../native-messaging-host';
-import { NativeMessageType, TOOL_SCHEMAS } from 'chrome-mcp-shared';
+import { NativeMessageType, TOOL_SCHEMAS } from 'agent-chrome-mcp-shared';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 async function listDynamicFlowTools(): Promise<Tool[]> {
