@@ -209,7 +209,19 @@ async function getPreferredPort(override?: unknown): Promise<number> {
       STORAGE_KEYS.SERVER_STATUS,
     ]);
 
-    const userPort = normalizePort(result[STORAGE_KEYS.NATIVE_SERVER_PORT]);
+    const storedPort = normalizePort(result[STORAGE_KEYS.NATIVE_SERVER_PORT]);
+    if (storedPort === NATIVE_HOST.LEGACY_DEFAULT_PORT) {
+      try {
+        await chrome.storage.local.set({
+          [STORAGE_KEYS.NATIVE_SERVER_PORT]: NATIVE_HOST.DEFAULT_PORT,
+        });
+      } catch {
+        // Ignore migration persistence errors and still use the new default.
+      }
+      return NATIVE_HOST.DEFAULT_PORT;
+    }
+
+    const userPort = storedPort;
     if (userPort) return userPort;
 
     const status = result[STORAGE_KEYS.SERVER_STATUS] as Partial<ServerStatus> | undefined;

@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "chrome-mcp-server",
+    "message": "Chrome MCP",
     "description": "擴充功能名稱"
   },
   "extensionDescription": {
@@ -73,7 +73,7 @@
     "placeholders": {
       "port": {
         "content": "$1",
-        "example": "12306"
+        "example": "12307"
       }
     }
   },

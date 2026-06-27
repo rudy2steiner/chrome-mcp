@@ -3,7 +3,13 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
 import { promisify } from 'util';
-import { COMMAND_NAME, DESCRIPTION, EXTENSION_ID, HOST_NAME } from './constant';
+import {
+  COMMAND_NAME,
+  DESCRIPTION,
+  EXTENSION_ID,
+  HOST_NAME,
+  LEGACY_EXTENSION_IDS,
+} from './constant';
 import { BrowserType, getBrowserConfig, detectInstalledBrowsers } from './browser-config';
 
 export const access = promisify(fs.access);
@@ -234,17 +240,169 @@ async function ensureWindowsFilePermissions(packageDistDir: string): Promise<voi
 }
 
 /**
+ * Validate a Chrome extension ID before writing it into allowed_origins.
+ * Chrome extension IDs are 32 chars using the a-p alphabet.
+ */
+export function normalizeExtensionId(extensionId?: string): string {
+  const id = (extensionId || EXTENSION_ID).trim();
+  if (!/^[a-p]{32}$/.test(id)) {
+    throw new Error(
+      `Invalid Chrome extension ID "${id}". Expected a 32-character Chrome extension id.`,
+    );
+  }
+  return id;
+}
+
+/**
+ * Normalize one or more Chrome extension IDs for Native Messaging allowed_origins.
+ * Accepts comma-separated values so migration builds can allow the old installed
+ * extension and the new source-built extension at the same time.
+ */
+export function normalizeExtensionIds(extensionIds?: string | string[]): string[] {
+  const rawIds = Array.isArray(extensionIds)
+    ? extensionIds
+    : (
+        extensionIds ||
+        process.env.MCP_CHROME_EXTENSION_ID ||
+        [EXTENSION_ID, ...LEGACY_EXTENSION_IDS].join(',')
+      ).split(',');
+  const ids = rawIds.map((id) => normalizeExtensionId(id.trim()));
+  return Array.from(new Set(ids));
+}
+
+function extensionIdsFromManifest(manifestPath: string): string[] {
+  try {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const origins = Array.isArray(manifest.allowed_origins) ? manifest.allowed_origins : [];
+    return origins
+      .map((origin: unknown) =>
+        typeof origin === 'string' ? origin.match(/^chrome-extension:\/\/([a-p]{32})\/$/)?.[1] : '',
+      )
+      .filter((id: string | undefined): id is string => Boolean(id));
+  } catch {
+    return [];
+  }
+}
+
+function getBrowserUserDataDir(browserType: BrowserType): string | null {
+  const home = os.homedir();
+  if (os.platform() === 'darwin') {
+    return browserType === BrowserType.CHROMIUM
+      ? path.join(home, 'Library', 'Application Support', 'Chromium')
+      : path.join(home, 'Library', 'Application Support', 'Google', 'Chrome');
+  }
+  if (os.platform() === 'win32') {
+    const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+    return browserType === BrowserType.CHROMIUM
+      ? path.join(localAppData, 'Chromium', 'User Data')
+      : path.join(localAppData, 'Google', 'Chrome', 'User Data');
+  }
+  return browserType === BrowserType.CHROMIUM
+    ? path.join(home, '.config', 'chromium')
+    : path.join(home, '.config', 'google-chrome');
+}
+
+function profileDirs(userDataDir: string): string[] {
+  try {
+    return fs
+      .readdirSync(userDataDir, { withFileTypes: true })
+      .filter(
+        (entry) =>
+          entry.isDirectory() && (entry.name === 'Default' || /^Profile \d+$/.test(entry.name)),
+      )
+      .map((entry) => path.join(userDataDir, entry.name));
+  } catch {
+    return [];
+  }
+}
+
+function maybeChromeMcpManifest(manifest: any): boolean {
+  const text = JSON.stringify({
+    name: manifest?.name,
+    default_locale: manifest?.default_locale,
+    description: manifest?.description,
+    permissions: manifest?.permissions,
+  }).toLowerCase();
+  return (
+    (text.includes('chrome mcp') ||
+      text.includes('chrome-mcp') ||
+      text.includes('mcp chrome') ||
+      text.includes('__msg_extensionname__')) &&
+    text.includes('nativemessaging')
+  );
+}
+
+function detectProfileExtensionIds(browserType: BrowserType): string[] {
+  const userDataDir = getBrowserUserDataDir(browserType);
+  if (!userDataDir) return [];
+
+  const ids = new Set<string>();
+
+  for (const profileDir of profileDirs(userDataDir)) {
+    const settingsPath = path.join(profileDir, 'Preferences');
+    try {
+      const prefs = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      const settings = prefs.extensions?.settings || {};
+      for (const [id, setting] of Object.entries<any>(settings)) {
+        const manifest = setting?.manifest;
+        if (/^[a-p]{32}$/.test(id) && manifest && maybeChromeMcpManifest(manifest)) {
+          ids.add(id);
+        }
+      }
+    } catch {
+      // Chrome profile files may be locked or privacy-protected. Packed extension
+      // directories below still cover common installed-extension cases.
+    }
+
+    const extensionsDir = path.join(profileDir, 'Extensions');
+    try {
+      for (const id of fs.readdirSync(extensionsDir)) {
+        if (!/^[a-p]{32}$/.test(id)) continue;
+        const versionRoot = path.join(extensionsDir, id);
+        const versions = fs.existsSync(versionRoot) ? fs.readdirSync(versionRoot) : [];
+        for (const version of versions) {
+          const manifestPath = path.join(versionRoot, version, 'manifest.json');
+          try {
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            if (maybeChromeMcpManifest(manifest)) ids.add(id);
+          } catch {
+            // Ignore unreadable extension manifests.
+          }
+        }
+      }
+    } catch {
+      // Ignore missing extension directories.
+    }
+  }
+
+  return Array.from(ids);
+}
+
+function collectAllowedExtensionIds(
+  browserType: BrowserType,
+  manifestPath: string,
+  extensionId?: string | string[],
+): string[] {
+  return normalizeExtensionIds([
+    ...normalizeExtensionIds(extensionId),
+    ...extensionIdsFromManifest(manifestPath),
+    ...detectProfileExtensionIds(browserType),
+  ]);
+}
+
+/**
  * Create Native Messaging host manifest content
  */
-export async function createManifestContent(): Promise<any> {
+export async function createManifestContent(extensionId?: string | string[]): Promise<any> {
   const mainPath = await getMainPath();
+  const allowedExtensionIds = normalizeExtensionIds(extensionId);
 
   return {
     name: HOST_NAME,
     description: DESCRIPTION,
     path: mainPath, // Node.js可执行文件路径
     type: 'stdio',
-    allowed_origins: [`chrome-extension://${EXTENSION_ID}/`],
+    allowed_origins: allowedExtensionIds.map((id) => `chrome-extension://${id}/`),
   };
 }
 
@@ -291,15 +449,19 @@ function verifyWindowsRegistryEntry(registryKey: string, expectedPath: string): 
  */
 export async function registerUserLevelHostWithNodePath(
   browsers?: BrowserType[],
+  extensionId?: string | string[],
 ): Promise<boolean> {
   writeNodePathFile(path.join(__dirname, '..'));
-  return tryRegisterUserLevelHost(browsers);
+  return tryRegisterUserLevelHost(browsers, extensionId);
 }
 
 /**
  * 尝试注册用户级别的Native Messaging主机
  */
-export async function tryRegisterUserLevelHost(targetBrowsers?: BrowserType[]): Promise<boolean> {
+export async function tryRegisterUserLevelHost(
+  targetBrowsers?: BrowserType[],
+  extensionId?: string | string[],
+): Promise<boolean> {
   try {
     console.log(colorText('Attempting to register user-level Native Messaging host...', 'blue'));
 
@@ -318,18 +480,22 @@ export async function tryRegisterUserLevelHost(targetBrowsers?: BrowserType[]): 
       console.log(colorText(`Detected browsers: ${browsersToRegister.join(', ')}`, 'blue'));
     }
 
-    // 3. 创建清单内容
-    const manifest = await createManifestContent();
-
     let successCount = 0;
     const results: { browser: string; success: boolean; error?: string }[] = [];
 
-    // 4. 为每个浏览器注册
+    // 3. 为每个浏览器注册
     for (const browserType of browsersToRegister) {
       const config = getBrowserConfig(browserType);
       console.log(colorText(`\nRegistering for ${config.displayName}...`, 'blue'));
 
       try {
+        const allowedExtensionIds = collectAllowedExtensionIds(
+          browserType,
+          config.userManifestPath,
+          extensionId,
+        );
+        const manifest = await createManifestContent(allowedExtensionIds);
+
         // 确保目录存在
         await mkdir(path.dirname(config.userManifestPath), { recursive: true });
 
@@ -365,7 +531,7 @@ export async function tryRegisterUserLevelHost(targetBrowsers?: BrowserType[]): 
       }
     }
 
-    // 5. 报告结果
+    // 4. 报告结果
     console.log(colorText('\n===== Registration Summary =====', 'blue'));
     for (const result of results) {
       if (result.success) {
@@ -401,18 +567,23 @@ if (process.platform === 'win32') {
 /**
  * 使用提升权限注册系统级清单
  */
-export async function registerWithElevatedPermissions(): Promise<void> {
+export async function registerWithElevatedPermissions(
+  extensionId?: string | string[],
+): Promise<void> {
   try {
     console.log(colorText('Attempting to register system-level manifest...', 'blue'));
 
     // 1. 确保执行权限
     await ensureExecutionPermissions();
 
-    // 2. 准备清单内容
-    const manifest = await createManifestContent();
-
-    // 3. 获取系统级清单路径
+    // 2. 获取系统级清单路径
     const manifestPath = getSystemManifestPath();
+
+    // 3. 准备清单内容
+    const manifest = await createManifestContent([
+      ...normalizeExtensionIds(extensionId),
+      ...extensionIdsFromManifest(manifestPath),
+    ]);
 
     // 4. 创建临时清单文件
     const tempManifestPath = path.join(os.tmpdir(), `${HOST_NAME}.json`);

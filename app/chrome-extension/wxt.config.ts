@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from 'dotenv';
 import { resolve } from 'path';
+import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
 import Icons from 'unplugin-icons/vite';
 import Components from 'unplugin-vue-components/vite';
 import IconsResolver from 'unplugin-icons/resolver';
@@ -10,9 +11,26 @@ import IconsResolver from 'unplugin-icons/resolver';
 config({ path: resolve(process.cwd(), '.env') });
 config({ path: resolve(process.cwd(), '.env.local') });
 
-const CHROME_EXTENSION_KEY = process.env.CHROME_EXTENSION_KEY;
+// Stable public key for the local "Chrome MCP" extension identity.
+// This makes unpacked installs use a fixed extension ID instead of the path-derived
+// ID, so the native host can register against a predictable origin.
+const DEFAULT_CHROME_MCP_EXTENSION_KEY =
+  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtLetTYcaP3gTnajq88bBYFSysY7FIpMDgIWHM1SM/QQKwwt0ZePW+s0+toz1RxWHvpLg9ZaFWb+KsKZpoSP7VToLszgj6MCo8WCo0uQPtnWmsVOibXLxTVuRA4wE4cpYRa2uSLrLYmTVIDzjT442CJpQTj77bjOKBwKUC723UD+i/SJnbEEP5qmsZhX/Tjub8TNNExNTAZvw6kY6QTT4qn/HgbMt1eFxOYRbaGmvtvfhIu4dXUL5n+6w4upCaHBFT7zX7Ln9FpTMitbZTHAWMCNSEPwQGoKkDA/ssV1VaPTJ9dmHYH2Lu6JlfRvCvDeD6Hm830c8a+DNMQ4aNUv6gwIDAQAB';
+const CHROME_EXTENSION_KEY = process.env.CHROME_EXTENSION_KEY || DEFAULT_CHROME_MCP_EXTENSION_KEY;
 // Detect dev mode early for manifest-level switches
 const IS_DEV = process.env.NODE_ENV !== 'production' && process.env.MODE !== 'production';
+
+function copyStaticAssetsEarly(): void {
+  const outDir = resolve(process.cwd(), '.output/chrome-mv3');
+  for (const target of ['inject-scripts', 'workers', '_locales']) {
+    const src = resolve(process.cwd(), target);
+    const dest = resolve(outDir, target);
+    if (!existsSync(src)) continue;
+    mkdirSync(outDir, { recursive: true });
+    rmSync(dest, { recursive: true, force: true });
+    cpSync(src, dest, { recursive: true });
+  }
+}
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -63,7 +81,7 @@ export default defineConfig({
     },
     action: {
       default_popup: 'popup.html',
-      default_title: 'Chrome MCP Server',
+      default_title: 'Chrome MCP',
     },
     // Chrome Side Panel entry for workflow management
     // Ref: https://developer.chrome.com/docs/extensions/reference/api/sidePanel
@@ -131,6 +149,12 @@ export default defineConfig({
         resolvers: [IconsResolver({ prefix: 'i', enabledCollections: ['lucide', 'mdi', 'ri'] })],
       }) as any,
       Icons({ compiler: 'vue3', autoInstall: false }) as any,
+      {
+        name: 'chrome-mcp-copy-static-assets-early',
+        buildStart() {
+          copyStaticAssetsEarly();
+        },
+      },
       // Ensure static assets are available as early as possible to avoid race conditions in dev
       // Copy workers/_locales/inject-scripts into the build output before other steps
       viteStaticCopy({
@@ -142,10 +166,6 @@ export default defineConfig({
           {
             src: ['workers/*'],
             dest: 'workers',
-          },
-          {
-            src: '_locales/**/*',
-            dest: '_locales',
           },
         ],
         // Use writeBundle so outDir exists for dev and prod

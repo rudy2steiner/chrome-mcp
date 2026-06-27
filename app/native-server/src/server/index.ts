@@ -219,7 +219,7 @@ export class Server {
 
       if (transport) {
         // Transport found, proceed
-      } else if (!sessionId && isInitializeRequest(request.body)) {
+      } else if (isInitializeRequest(request.body)) {
         const newSessionId = randomUUID();
         transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => newSessionId,

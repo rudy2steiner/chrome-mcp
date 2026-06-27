@@ -6,7 +6,8 @@
 // Native Host Configuration
 export const NATIVE_HOST = {
   NAME: 'com.chromemcp.nativehost',
-  DEFAULT_PORT: 12306,
+  LEGACY_DEFAULT_PORT: 12306,
+  DEFAULT_PORT: 12307,
 } as const;
 
 // Chrome Extension Icons
