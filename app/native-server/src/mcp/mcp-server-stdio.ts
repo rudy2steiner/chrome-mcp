@@ -14,6 +14,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { tryRegisterUserLevelHost, writeNodePathFile } from '../scripts/utils';
 
 let stdioMcpServer: Server | null = null;
 let mcpClient: Client | null = null;
@@ -73,6 +74,23 @@ export const ensureMcpClient = async () => {
   }
 };
 
+async function ensureNativeMessagingRegistration(): Promise<void> {
+  if (process.env.CHROME_MCP_SKIP_AUTO_REGISTER === '1') return;
+
+  const originalLog = console.log;
+  try {
+    // MCP stdio reserves stdout for protocol frames. Registration helpers are
+    // CLI-oriented and log to stdout, so redirect those messages to stderr.
+    console.log = (...args: unknown[]) => console.error(...args);
+    writeNodePathFile(path.join(__dirname, '..'));
+    await tryRegisterUserLevelHost();
+  } catch (error) {
+    console.error('Chrome MCP auto-registration skipped:', error);
+  } finally {
+    console.log = originalLog;
+  }
+}
+
 export const setupTools = (server: Server) => {
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOL_SCHEMAS }));
@@ -115,6 +133,7 @@ const handleToolCall = async (name: string, args: any): Promise<CallToolResult> 
 };
 
 async function main() {
+  await ensureNativeMessagingRegistration();
   const transport = new StdioServerTransport();
   await getStdioMcpServer().connect(transport);
 }

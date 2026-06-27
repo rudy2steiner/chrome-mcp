@@ -10,8 +10,12 @@ export default defineConfig({
       // Match WXT's path aliases from .wxt/tsconfig.json
       '@': rootDir,
       '~': rootDir,
+      '@xenova/transformers': `${rootDir}/tests/__mocks__/xenova-transformers.ts`,
       // Mock hnswlib-wasm-static to avoid native module issues in tests
       'hnswlib-wasm-static': `${rootDir}/tests/__mocks__/hnswlib-wasm-static.ts`,
+      // @xenova/transformers imports sharp for Node image handling, but these
+      // tests run in a browser-like jsdom environment.
+      sharp: `${rootDir}/tests/__mocks__/sharp.ts`,
     },
   },
   test: {

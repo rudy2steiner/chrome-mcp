@@ -84,59 +84,53 @@ mcp-chrome-bridge register
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode"
    - Click "Load unpacked" and select `your/dowloaded/extension/folder`
-   - Click the extension icon to open the plugin, then click connect to see the MCP configuration
+   - Click the extension icon once. Chrome MCP will start the local bridge automatically.
      <img width="475" alt="Screenshot 2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
 ### Usage with MCP Protocol Clients
 
-#### Using Streamable HTTP Connection (👍🏻 Recommended)
+#### Using STDIO Connection (Recommended)
 
-Add the following configuration to your MCP client configuration (using CherryStudio as an example):
+Add Chrome MCP as a normal stdio MCP server. The stdio entry point performs a best-effort Native Messaging registration on startup, so users do not need to know or copy the Chrome extension ID.
 
-> Streamable HTTP connection method is recommended
+```json
+{
+  "mcpServers": {
+    "chrome-mcp": {
+      "command": "mcp-chrome-stdio",
+      "args": []
+    }
+  }
+}
+```
+
+If your MCP client cannot resolve global npm binaries, use `npx`:
+
+```json
+{
+  "mcpServers": {
+    "chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--package", "mcp-chrome-bridge", "mcp-chrome-stdio"]
+    }
+  }
+}
+```
+
+#### Using Streamable HTTP Connection
 
 ```json
 {
   "mcpServers": {
     "chrome-mcp-server": {
       "type": "streamableHttp",
-      "url": "http://127.0.0.1:12306/mcp"
+      "url": "http://127.0.0.1:12307/mcp"
     }
   }
 }
 ```
 
-#### Using STDIO Connection (Alternative)
-
-If your client only supports stdio connection method, please use the following approach:
-
-1. First, check the installation location of the npm package you just installed
-
-```sh
-# npm check method
-npm list -g mcp-chrome-bridge
-# pnpm check method
-pnpm list -g mcp-chrome-bridge
-```
-
-Assuming the command above outputs the path: /Users/xxx/Library/pnpm/global/5
-Then your final path would be: /Users/xxx/Library/pnpm/global/5/node_modules/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js
-
-2. Replace the configuration below with the final path you just obtained
-
-```json
-{
-  "mcpServers": {
-    "chrome-mcp-stdio": {
-      "command": "npx",
-      "args": [
-        "node",
-        "/Users/xxx/Library/pnpm/global/5/node_modules/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js"
-      ]
-    }
-  }
-}
-```
+Use HTTP only after the Chrome extension has started the local bridge at `http://127.0.0.1:12307`.
 
 eg：config in augment:
 

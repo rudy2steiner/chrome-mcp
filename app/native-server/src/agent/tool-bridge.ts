@@ -21,7 +21,7 @@ export interface CliToolInvocation {
 
 export interface AgentToolBridgeOptions {
   /**
-   * Base URL of the local MCP HTTP endpoint (e.g. http://127.0.0.1:12306/mcp).
+   * Base URL of the local MCP HTTP endpoint (e.g. http://127.0.0.1:12307/mcp).
    * If omitted, DEFAULT_SERVER_PORT from chrome-mcp-shared is used.
    */
   mcpUrl?: string;

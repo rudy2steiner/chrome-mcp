@@ -26,7 +26,7 @@ import {
 } from './utils';
 import { NATIVE_SERVER_PORT } from '../constant';
 
-const EXPECTED_PORT = 12306;
+const EXPECTED_PORT = NATIVE_SERVER_PORT;
 const SCHEMA_VERSION = 1;
 const MIN_NODE_MAJOR_VERSION = 20;
 

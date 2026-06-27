@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Chrome MCPサーバー"
+    "message": "Chrome MCP"
   },
   "extensionDescription": {
     "message": "自身のChromeブラウザの機能を外部に公開します"
@@ -55,7 +55,7 @@
     "placeholders": {
       "port": {
         "content": "$1",
-        "example": "12306"
+        "example": "12307"
       }
     }
   },

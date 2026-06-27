@@ -2,7 +2,7 @@ import { stdin, stdout } from 'process';
 import { Server } from './server';
 import { v4 as uuidv4 } from 'uuid';
 import { NativeMessageType } from 'chrome-mcp-shared';
-import { TIMEOUTS } from './constant';
+import { NATIVE_SERVER_PORT, TIMEOUTS } from './constant';
 import fileHandler from './file-handler';
 
 interface PendingRequest {
@@ -120,7 +120,7 @@ export class NativeMessagingHost {
     try {
       switch (message.type) {
         case NativeMessageType.START:
-          await this.startServer(message.payload?.port || 12306);
+          await this.startServer(message.payload?.port || NATIVE_SERVER_PORT);
           break;
         case NativeMessageType.STOP:
           await this.stopServer();

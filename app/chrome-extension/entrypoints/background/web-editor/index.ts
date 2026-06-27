@@ -14,7 +14,7 @@ import { openAgentChatSidepanel } from '../utils/sidepanel';
 
 const CONTEXT_MENU_ID = 'web_editor_toggle';
 const COMMAND_KEY = 'toggle_web_editor';
-const DEFAULT_NATIVE_SERVER_PORT = 12306;
+const DEFAULT_NATIVE_SERVER_PORT = 12307;
 
 /** Storage key prefix for TX change session data (per-tab isolation) */
 const WEB_EDITOR_TX_CHANGED_SESSION_KEY_PREFIX = 'web-editor-v2-tx-changed-';

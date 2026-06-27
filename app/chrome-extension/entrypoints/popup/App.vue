@@ -4,7 +4,7 @@
     <div v-show="currentView === 'home'" class="home-view">
       <div class="header">
         <div class="header-content">
-          <h1 class="header-title">Chrome MCP Server</h1>
+          <h1 class="header-title">Chrome MCP</h1>
         </div>
       </div>
       <div class="content">
@@ -333,6 +333,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { NativeMessageType } from 'chrome-mcp-shared';
 import {
   PREDEFINED_MODELS,
   type ModelPreset,
@@ -342,7 +343,7 @@ import {
   cleanupModelCache,
 } from '@/utils/semantic-similarity-engine';
 import { BACKGROUND_MESSAGE_TYPES } from '@/common/message-types';
-import { LINKS } from '@/common/constants';
+import { LINKS, NATIVE_HOST } from '@/common/constants';
 import { getMessage } from '@/utils/i18n';
 import { useAgentTheme, type AgentThemeId } from '../sidepanel/composables/useAgentTheme';
 
@@ -514,7 +515,7 @@ const runFlow = async (flowId: string) => {
 
 const nativeConnectionStatus = ref<'unknown' | 'connected' | 'disconnected'>('unknown');
 const isConnecting = ref(false);
-const nativeServerPort = ref<number>(12306);
+const nativeServerPort = ref<number>(NATIVE_HOST.DEFAULT_PORT);
 
 const serverStatus = ref<{
   isRunning: boolean;
@@ -1020,6 +1021,29 @@ const checkServerStatus = async () => {
   }
 };
 
+const ensureNativeConnection = async () => {
+  if (isConnecting.value) return;
+  isConnecting.value = true;
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: NativeMessageType.ENSURE_NATIVE,
+      port: nativeServerPort.value,
+    });
+    if (response?.connected) {
+      nativeConnectionStatus.value = 'connected';
+      await savePortPreference(nativeServerPort.value);
+    } else {
+      nativeConnectionStatus.value = 'disconnected';
+    }
+    await checkServerStatus();
+  } catch (error) {
+    console.error('自动连接 Native 服务失败:', error);
+    nativeConnectionStatus.value = 'disconnected';
+  } finally {
+    isConnecting.value = false;
+  }
+};
+
 const refreshServerStatus = async () => {
   try {
     // eslint-disable-next-line no-undef
@@ -1194,7 +1218,13 @@ const loadPortPreference = async () => {
   try {
     // eslint-disable-next-line no-undef
     const result = await chrome.storage.local.get(['nativeServerPort']);
-    if (result.nativeServerPort) {
+    if (result.nativeServerPort === NATIVE_HOST.LEGACY_DEFAULT_PORT) {
+      nativeServerPort.value = NATIVE_HOST.DEFAULT_PORT;
+      await savePortPreference(NATIVE_HOST.DEFAULT_PORT);
+      console.log(
+        `端口偏好已从旧默认值 ${NATIVE_HOST.LEGACY_DEFAULT_PORT} 迁移到 ${NATIVE_HOST.DEFAULT_PORT}`,
+      );
+    } else if (result.nativeServerPort) {
       nativeServerPort.value = result.nativeServerPort;
       console.log(`端口偏好已加载: ${result.nativeServerPort}`);
     }
@@ -1517,6 +1547,7 @@ onMounted(async () => {
   await initTheme();
   await loadPortPreference();
   await loadModelPreference();
+  await ensureNativeConnection();
   await checkNativeConnection();
   await checkServerStatus();
   await refreshStorageStats();
