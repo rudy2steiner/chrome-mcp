@@ -1,9 +1,51 @@
 # Changelog
 
+**📖 Documentation**: [English](CHANGELOG.md) | [中文](CHANGELOG_zh.md)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v1.0.33]
+
+### Added
+
+- Agent-first install prompt so users can ask their MCP agent to add the configuration.
+- npm-facing install guide for `agent-chrome-mcp`.
+- Registry-safe `npx` MCP configuration using `--registry=https://registry.npmjs.org`.
+- Maintained feature list in `docs/FEATURES.md`.
+- Acknowledgement for the original `hangwin/mcp-chrome` project and author `hangye`.
+
+### Changed
+
+- Broadened product positioning from coding-agent setup to general browser work automation.
+- Repositioned installation around the agent-first setup flow.
+- Updated the extension popup copyable MCP config to use the registry-safe `npx` command.
+- Updated release workflow generated MCP config and release install instructions.
+- Replaced the old native package README that described an internal Fastify service with a user-facing npm guide.
+- Bumped native bridge and Chrome extension package versions to `1.0.33`.
+
+### Fixed
+
+- Avoided failures when user machines default to private npm mirrors that do not contain `agent-chrome-mcp`.
+- Made npm package publishing safer by ensuring the native package does not publish `workspace:*` dependencies.
+
+## [v1.0.32]
+
+### Added
+
+- Published npm packages for the renamed Agent Chrome MCP bridge:
+  - `agent-chrome-mcp`
+  - `agent-chrome-mcp-shared`
+- Added `agent-chrome-mcp stdio` as the recommended agent entry point.
+- Added simplified MCP config generation in the extension popup.
+
+### Changed
+
+- Renamed/repositioned the project as Agent Chrome MCP.
+- Changed the default bridge port to `12307` to avoid conflicts with older installs.
+- Updated release workflow to build, test, package, and publish the native bridge and extension.
 
 ## [v0.0.5]
 
@@ -70,7 +112,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Core Browser Tools**: Complete set of browser automation tools for web interaction
-
   - **Click Tool**: Intelligent element clicking with coordinate and selector support
   - **Fill Tool**: Form filling with text input and selection capabilities
   - **Screenshot Tool**: Full page and element-specific screenshot capture
@@ -78,20 +119,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Keyboard Tool**: Keyboard input simulation and hotkey support
 
 - **Vector Search Engine**: Advanced semantic search capabilities
-
   - **Content Indexing**: Automatic indexing of browser tab content
   - **Semantic Similarity**: AI-powered text similarity matching
   - **Vector Database**: Efficient storage and retrieval of embeddings
   - **Multi-language Support**: Comprehensive multilingual text processing
 
 - **Native Host Integration**: Seamless communication with external applications
-
   - **Chrome Native Messaging**: Bidirectional communication channel
   - **Cross-platform Support**: Windows, macOS, and Linux compatibility
   - **Message Protocol**: Structured messaging system for tool execution
 
 - **AI Model Integration**: State-of-the-art language models for semantic processing
-
   - **Transformer Models**: Support for multiple pre-trained models
   - **ONNX Runtime**: Optimized model inference with WebAssembly
   - **Model Management**: Dynamic model loading and switching

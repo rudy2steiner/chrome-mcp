@@ -1,5 +1,7 @@
 # Agent Chrome MCP 架构设计 🏗️
 
+**📖 文档**: [English](ARCHITECTURE.md) | [中文](ARCHITECTURE_zh.md)
+
 本文档提供 Agent Chrome MCP 架构、设计决策和实现细节的详细技术概述。
 
 ## 📋 目录

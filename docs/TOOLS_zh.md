@@ -1,5 +1,7 @@
 # Agent Chrome MCP API 参考 📚
 
+**📖 文档**: [English](TOOLS.md) | [中文](TOOLS_zh.md)
+
 所有可用工具及其参数的完整参考。
 
 ## 📋 目录

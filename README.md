@@ -6,7 +6,7 @@
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://developer.chrome.com/docs/extensions/)
 [![Release](https://img.shields.io/github/v/release/rudy2steiner/chrome-mcp.svg)](https://img.shields.io/github/v/release/rudy2steiner/chrome-mcp.svg)
 
-> 🌟 **Turn your Chrome browser into your intelligent assistant** - Let AI take control of your browser, transforming it into a powerful AI-controlled automation tool.
+> 🌟 **Turn your Chrome browser into an agent-powered work automation tool** - Let AI operate your own browser for research, operations, QA, data entry, content workflows, and coding tasks.
 
 **📖 Documentation**: [English](README.md) | [中文](README_zh.md)
 
@@ -16,7 +16,50 @@
 
 ## 🎯 What is Agent Chrome MCP?
 
-Agent Chrome MCP is a Chrome extension-based **Model Context Protocol (MCP) server** that exposes your Chrome browser functionality to AI assistants like Claude, enabling complex browser automation, content analysis, and semantic search. Unlike traditional browser automation tools (like Playwright), **Agent Chrome MCP** directly uses your daily Chrome browser, leveraging existing user habits, configurations, and login states, allowing various large models or chatbots to take control of your browser and truly become your everyday assistant.
+Agent Chrome MCP is a Chrome extension-based **Model Context Protocol (MCP) server** that exposes your own Chrome browser to AI agents. It is built for everyday browser work automation: research, data entry, operations tasks, QA checks, content workflows, shopping or travel workflows, and coding-adjacent tasks.
+
+Unlike traditional browser automation tools (like Playwright), **Agent Chrome MCP** directly uses your daily Chrome browser, preserving your existing tabs, login sessions, cookies, extensions, and settings. Any MCP-capable agent can operate the browser you already use instead of a separate automation browser.
+
+## 🤝 Works with Trending Agents
+
+Agent Chrome MCP works with any MCP-capable agent—no vendor lock-in. Install the Chrome extension, then **ask your agent to install it** with the prompt below.
+
+### Cowork agents
+
+- [Claude Cowork](https://claude.com/product/cowork)
+- [ChatGPT](https://chatgpt.com)
+- [QoderWork](https://qoder.com/qoderwork)
+
+### Coding & other agents
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- [OpenAI Codex](https://developers.openai.com/codex)
+- [Cursor](https://cursor.com)
+- [Cherry Studio](https://cherry-ai.com)
+- [Augment](https://augmentcode.com)
+
+### Ask your agent to install it
+
+Copy this prompt into your agent:
+
+```text
+Install Agent Chrome MCP for this agent.
+
+Use this MCP server config:
+
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+
+Add it to this agent's MCP settings. Do not use a global npm install. After updating the config, tell me where you saved it and remind me to restart the agent. Also remind me to install the Chrome extension from https://github.com/rudy2steiner/chrome-mcp/releases/latest and click Connect in the extension popup.
+```
+
+Restart the agent, then open the extension popup and click **Connect**. See [Quick Start](#-quick-start) for extension installation steps.
 
 ## ✨ New Features(2025/12/30)
 
@@ -24,15 +67,18 @@ Agent Chrome MCP is a Chrome extension-based **Model Context Protocol (MCP) serv
 
 ## ✨ Core Features
 
-- 😁 **Chatbot/Model Agnostic**: Let any LLM or chatbot client or agent you prefer automate your browser
-- ⭐️ **Use Your Original Browser**: Seamlessly integrate with your existing browser environment (your configurations, login states, etc.)
+- 😁 **Agent/Model Agnostic**: Works with any MCP-capable agent or LLM client
+- 🧩 **Work Automation**: Automate research, forms, admin workflows, QA checks, content tasks, and coding workflows from your normal browser
+- ⭐️ **Use Your Original Browser**: Keep your tabs, login sessions, cookies, extensions, and settings
 - 💻 **Fully Local**: Pure local MCP server ensuring user privacy
 - 🚄 **Streamable HTTP**: Streamable HTTP connection method
 - 🏎 **Cross-Tab**: Cross-tab context
 - 🧠 **Semantic Search**: Built-in vector database for intelligent browser tab content discovery
 - 🔍 **Smart Content Analysis**: AI-powered text extraction and similarity matching
-- 🌐 **20+ Tools**: Support for screenshots, network monitoring, interactive operations, bookmark management, browsing history, and 20+ other tools
+- 🌐 **20+ Tools**: Screenshots, network monitoring, interaction, bookmarks, history, and more
 - 🚀 **SIMD-Accelerated AI**: Custom WebAssembly SIMD optimization for 4-8x faster vector operations
+
+See the maintained feature list: [docs/FEATURES.md](docs/FEATURES.md) | [中文](docs/FEATURES_zh.md)
 
 ## 🆚 Comparison with Similar Projects
 
@@ -47,10 +93,12 @@ Agent Chrome MCP is a Chrome extension-based **Model Context Protocol (MCP) serv
 
 ## 🚀 Quick Start
 
+No global npm install required. Install the Chrome extension, then ask your agent to add the MCP config with the copyable prompt below.
+
 ### Prerequisites
 
 - Chrome/Chromium browser
-- An MCP-capable agent client such as Codex, Claude, Qoder, Cursor, or Cherry Studio
+- An MCP-capable cowork agent such as Claude Cowork, Claude Code, Codex, Cursor, QoderWork, or ChatGPT
 
 The recommended setup uses `npx` so users do not need to run `npm install -g`.
 
@@ -69,22 +117,47 @@ The recommended setup uses `npx` so users do not need to run `npm install -g`.
    - Click "Copy Configuration"
      <img width="475" alt="Screenshot 2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
-3. **Add the MCP server to your agent**
+3. **Ask your agent to install it**
 
-Paste the copied config into your agent MCP settings, then restart the agent:
+Copy this prompt into your agent:
+
+```text
+Install Agent Chrome MCP for this agent.
+
+Use this MCP server config:
+
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+
+Add it to this agent's MCP settings. Do not use a global npm install. After updating the config, tell me where you saved it and remind me to restart the agent. Also remind me to install the Chrome extension from https://github.com/rudy2steiner/chrome-mcp/releases/latest and click Connect in the extension popup.
+```
+
+4. **Restart and connect**
+
+Restart the agent. Then open the extension popup and click "Connect".
+
+#### Manual MCP Config
+
+If you prefer to edit the config yourself, add this to your agent MCP settings:
 
 ```json
 {
   "mcpServers": {
     "agent-chrome-mcp": {
       "command": "npx",
-      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
     }
   }
 }
 ```
 
-After the agent restarts, open the extension popup and click "Connect".
+Then restart the agent and click "Connect" in the extension popup.
 
 ### Usage with MCP Protocol Clients
 
@@ -97,7 +170,7 @@ Add Agent Chrome MCP as a normal stdio MCP server. The stdio entry point perform
   "mcpServers": {
     "agent-chrome-mcp": {
       "command": "npx",
-      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
     }
   }
 }
@@ -291,8 +364,19 @@ We have exciting plans for the future development of Agent Chrome MCP:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🙏 Acknowledgements
+
+Special thanks to the original [hangwin/mcp-chrome](https://github.com/hangwin/mcp-chrome) project and its author, **hangye**, whose work laid the foundation for this project.
+
 ## 📚 More Documentation
 
-- [Architecture Design](docs/ARCHITECTURE.md) - Detailed technical architecture documentation
-- [TOOLS API](docs/TOOLS.md) - Complete tool API documentation
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issue solutions
+Full index: [docs/README.md](docs/README.md) | [中文](docs/README_zh.md)
+
+- [Architecture Design](docs/ARCHITECTURE.md) - Detailed technical architecture documentation | [中文](docs/ARCHITECTURE_zh.md)
+- [Features](docs/FEATURES.md) - Maintained feature list | [中文](docs/FEATURES_zh.md)
+- [TOOLS API](docs/TOOLS.md) - Complete tool API documentation | [中文](docs/TOOLS_zh.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issue solutions | [中文](docs/TROUBLESHOOTING_zh.md)
+- [Windows Install Guide](docs/WINDOWS_INSTALL_zh.md) - Windows setup guide (中文)
+- [CLI MCP Config](docs/mcp-cli-config.md) - Codex / Claude Code connection guide | [中文](docs/mcp-cli-config_zh.md)
+- [Changelog](docs/CHANGELOG.md) - Version history | [中文](docs/CHANGELOG_zh.md)
+- [Visual Editor](docs/VisualEditor.md) - Visual editor for Claude Code & Codex | [中文](docs/VisualEditor_zh.md)

@@ -1,5 +1,7 @@
 # 🚀 Installation and Connection Issues
 
+**📖 Documentation**: [English](TROUBLESHOOTING.md) | [中文](TROUBLESHOOTING_zh.md)
+
 ## Quick Diagnosis
 
 Run the diagnostic tool to identify common issues:

@@ -2,7 +2,10 @@
   "name": "agent-chrome-mcp-monorepo",
   "version": "1.0.0",
   "private": true,
-  "author": "hangye",
+  "author": "rudy2steiner",
+  "contributors": [
+    "hangye"
+  ],
   "type": "module",
   "scripts": {
     "build:shared": "pnpm --filter agent-chrome-mcp-shared build",

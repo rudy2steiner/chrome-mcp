@@ -1,7 +1,7 @@
 {
   "name": "agent-chrome-mcp",
-  "version": "1.0.32",
-  "description": "Chrome Native-Messaging host (Node)",
+  "version": "1.0.33",
+  "description": "MCP stdio bridge for controlling your own Chrome browser with AI agents",
   "main": "dist/index.js",
   "bin": {
     "agent-chrome-mcp": "./dist/cli.js",
@@ -29,9 +29,15 @@
   "keywords": [
     "mcp",
     "chrome",
-    "browser"
+    "browser",
+    "agent",
+    "codex",
+    "claude"
   ],
-  "author": "hangye",
+  "author": "rudy2steiner",
+  "contributors": [
+    "hangye"
+  ],
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.69",

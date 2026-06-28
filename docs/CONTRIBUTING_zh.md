@@ -1,5 +1,7 @@
 # 贡献指南 🤝
 
+**📖 文档**: [English](CONTRIBUTING.md) | [中文](CONTRIBUTING_zh.md)
+
 感谢您对 Agent Chrome MCP 项目的贡献兴趣！本文档为贡献者提供指南和信息。
 
 ## 🎯 如何贡献

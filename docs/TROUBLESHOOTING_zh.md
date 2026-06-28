@@ -1,6 +1,8 @@
-## 🚀 安装和连接问题
+# 🚀 安装和连接问题
 
-### 快速诊断
+**📖 文档**: [English](TROUBLESHOOTING.md) | [中文](TROUBLESHOOTING_zh.md)
+
+## 快速诊断
 
 运行诊断工具来识别常见问题：
 

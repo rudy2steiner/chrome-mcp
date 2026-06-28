@@ -1,183 +1,155 @@
-# Fastify Chrome Native Messaging服务
+# Agent Chrome MCP
 
-这是一个基于Fastify的TypeScript项目，用于与Chrome扩展进行原生通信。
+**📖 Documentation**: [English](README.md) | [中文](README_zh.md)
 
-## 功能特性
+Use your own Chrome browser as an MCP server for work automation agents and MCP-compatible clients.
 
-- 通过Chrome Native Messaging协议与Chrome扩展进行双向通信
-- **支持多浏览器**: Chrome 和 Chromium (包括 Linux、macOS 和 Windows)
-- 提供RESTful API服务
-- 完全使用TypeScript开发
-- 包含完整的测试套件
-- 遵循代码质量最佳实践
+Agent Chrome MCP lets an agent inspect and operate the Chrome browser you already use, including your existing login sessions, tabs, cookies, and extensions. It is useful for research, data entry, operations workflows, QA checks, content workflows, and coding tasks.
 
-## 开发环境设置
+## Install
 
-### 前置条件
+Most users should not install this package manually. Use it from your agent MCP configuration with `npx`.
 
-- Node.js 20+
-- npm 8+ 或 pnpm 8+
+### 1. Install The Chrome Extension
 
-### 安装
+1. Download the latest `agent-chrome-mcp-extension.zip` from:
+   https://github.com/rudy2steiner/chrome-mcp/releases/latest
+2. Unzip it.
+3. Open Chrome and go to `chrome://extensions/`.
+4. Enable Developer mode.
+5. Click Load unpacked.
+6. Select the unzipped folder that contains `manifest.json`.
 
-```bash
-git clone https://github.com/your-username/fastify-chrome-native.git
-cd fastify-chrome-native
-npm install
-```
+### 2. Ask Your Agent To Install It
 
-### 开发
+Copy this prompt into your agent:
 
-1. 本地构建注册native server
+```text
+Install Agent Chrome MCP for this agent.
 
-```bash
-cd app/native-server
-npm run dev
-```
+Use this MCP server config:
 
-2. 启动chrome extension
-
-```bash
-cd app/chrome-extension
-npm run dev
-```
-
-### 构建
-
-```bash
-npm run build
-```
-
-### 注册Native Messaging主机
-
-#### 自动检测并注册所有已安装的浏览器
-
-```bash
-agent-chrome-mcp register --detect
-```
-
-#### 注册特定浏览器
-
-```bash
-# 仅注册 Chrome
-agent-chrome-mcp register --browser chrome
-
-# 仅注册 Chromium
-agent-chrome-mcp register --browser chromium
-
-# 注册所有支持的浏览器
-agent-chrome-mcp register --browser all
-```
-
-#### 全局安装（会自动注册检测到的浏览器）
-
-```bash
-npm i -g agent-chrome-mcp
-```
-
-#### 浏览器支持
-
-| 浏览器        | Linux | macOS | Windows |
-| ------------- | ----- | ----- | ------- |
-| Google Chrome | ✓     | ✓     | ✓       |
-| Chromium      | ✓     | ✓     | ✓       |
-
-注册位置：
-
-- **Linux**: `~/.config/[browser-name]/NativeMessagingHosts/`
-- **macOS**: `~/Library/Application Support/[Browser]/NativeMessagingHosts/`
-- **Windows**: `%APPDATA%\[Browser]\NativeMessagingHosts\`
-
-### 与Chrome扩展集成
-
-以下是Chrome扩展中如何使用此服务的简单示例：
-
-```javascript
-// background.js
-let nativePort = null;
-let serverRunning = false;
-
-// 启动Native Messaging服务
-function startServer() {
-  if (nativePort) {
-    console.log('已连接到Native Messaging主机');
-    return;
-  }
-
-  try {
-    nativePort = chrome.runtime.connectNative('com.yourcompany.fastify_native_host');
-
-    nativePort.onMessage.addListener((message) => {
-      console.log('收到Native消息:', message);
-
-      if (message.type === 'started') {
-        serverRunning = true;
-        console.log(`服务已启动，端口: ${message.payload.port}`);
-      } else if (message.type === 'stopped') {
-        serverRunning = false;
-        console.log('服务已停止');
-      } else if (message.type === 'error') {
-        console.error('Native错误:', message.payload.message);
-      }
-    });
-
-    nativePort.onDisconnect.addListener(() => {
-      console.log('Native连接断开:', chrome.runtime.lastError);
-      nativePort = null;
-      serverRunning = false;
-    });
-
-    // 启动服务器
-    nativePort.postMessage({ type: 'start', payload: { port: 3000 } });
-  } catch (error) {
-    console.error('启动Native Messaging时出错:', error);
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
   }
 }
 
-// 停止服务器
-function stopServer() {
-  if (nativePort && serverRunning) {
-    nativePort.postMessage({ type: 'stop' });
-  }
-}
-
-// 测试与服务器的通信
-async function testPing() {
-  try {
-    const response = await fetch('http://localhost:3000/ping');
-    const data = await response.json();
-    console.log('Ping响应:', data);
-    return data;
-  } catch (error) {
-    console.error('Ping失败:', error);
-    return null;
-  }
-}
-
-// 在扩展启动时连接Native主机
-chrome.runtime.onStartup.addListener(startServer);
-
-// 导出供popup或内容脚本使用的API
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'startServer') {
-    startServer();
-    sendResponse({ success: true });
-  } else if (message.action === 'stopServer') {
-    stopServer();
-    sendResponse({ success: true });
-  } else if (message.action === 'testPing') {
-    testPing().then(sendResponse);
-    return true; // 指示我们将异步发送响应
-  }
-});
+Add it to this agent's MCP settings. Do not use a global npm install. After updating the config, tell me where you saved it and remind me to restart the agent. Also remind me to install the Chrome extension from https://github.com/rudy2steiner/chrome-mcp/releases/latest and click Connect in the extension popup.
 ```
 
-### 测试
+### 3. Restart And Connect
+
+Restart your agent. Then open the Agent Chrome MCP extension popup and click Connect.
+
+After that, your agent should be able to list and call Chrome tools.
+
+## Manual MCP Config
+
+If you prefer to edit the MCP config yourself, add this to your agent MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+```
+
+Then restart your agent and click Connect in the Chrome extension popup.
+
+The explicit npm registry flag avoids failures on machines configured to use a private or mirrored npm registry that has not synced this package yet.
+
+## Quick Test
+
+Check that npm can run the bridge:
 
 ```bash
-npm run test
+npx -y --registry=https://registry.npmjs.org agent-chrome-mcp@latest --version
 ```
 
-### 许可证
+For a real MCP stdio test, add the config above to your agent and restart it.
+
+## Optional Global Install
+
+If you prefer a global install:
+
+```bash
+npm install -g agent-chrome-mcp
+```
+
+Then use this MCP config:
+
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "agent-chrome-mcp",
+      "args": ["stdio"]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### npx says package not found
+
+Your npm registry may be set to a private mirror. Use the explicit registry config:
+
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+```
+
+Or change your npm registry:
+
+```bash
+npm config set registry https://registry.npmjs.org
+```
+
+### Extension cannot connect
+
+Run:
+
+```bash
+npx -y --registry=https://registry.npmjs.org agent-chrome-mcp@latest doctor
+```
+
+To attempt automatic fixes:
+
+```bash
+npx -y --registry=https://registry.npmjs.org agent-chrome-mcp@latest doctor --fix
+```
+
+## What This Package Does
+
+This package is the local MCP bridge that your agent starts. The Chrome extension connects to the local bridge, and the bridge exposes Chrome tools to your agent over MCP stdio.
+
+Normal users only need:
+
+1. Chrome extension
+2. MCP config
+3. Click Connect
+
+No global npm install is required.
+
+## License
 
 MIT
+
+## Acknowledgements
+
+Special thanks to the original [hangwin/mcp-chrome](https://github.com/hangwin/mcp-chrome) project and its author, **hangye**, whose work laid the foundation for Agent Chrome MCP.

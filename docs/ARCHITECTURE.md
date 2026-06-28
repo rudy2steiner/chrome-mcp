@@ -1,5 +1,7 @@
 # Agent Chrome MCP Architecture 🏗️
 
+**📖 Documentation**: [English](ARCHITECTURE.md) | [中文](ARCHITECTURE_zh.md)
+
 This document provides a detailed technical overview of the Agent Chrome MCP architecture, design decisions, and implementation details.
 
 ## 📋 Table of Contents

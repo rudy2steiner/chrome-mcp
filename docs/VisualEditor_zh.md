@@ -1,5 +1,7 @@
 ## 让Claude Code/Codex也能使用的可视化编辑器
 
+**📖 文档**: [English](VisualEditor.md) | [中文](VisualEditor_zh.md)
+
 如何开启：`右键 > chrome mcp server > 切换网页编辑模式`
 或者快捷键： `cmd/ctrl + shift + o`
 

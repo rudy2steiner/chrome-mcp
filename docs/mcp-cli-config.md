@@ -1,10 +1,14 @@
 # CLI MCP Configuration Guide
 
+**📖 Documentation**: [English](mcp-cli-config.md) | [中文](mcp-cli-config_zh.md)
+
 This guide explains how to configure Codex CLI and Claude Code to connect to the Agent Chrome MCP.
+
+Prefer stdio MCP config for everyday use. HTTP is an advanced option. See [README.md](../README.md) for the recommended install flow.
 
 ## Overview
 
-The Agent Chrome MCP exposes its MCP interface at `http://127.0.0.1:12306/mcp` (default port).
+The Agent Chrome MCP exposes its MCP interface at `http://127.0.0.1:12307/mcp` (default port).
 Both Codex CLI and Claude Code can connect to this endpoint to use Chrome browser control tools.
 
 ## Codex CLI Configuration
@@ -17,7 +21,7 @@ Add the following to your `~/.codex/config.json`:
 {
   "mcpServers": {
     "agent-chrome-mcp": {
-      "url": "http://127.0.0.1:12306/mcp"
+      "url": "http://127.0.0.1:12307/mcp"
     }
   }
 }
@@ -28,7 +32,7 @@ Add the following to your `~/.codex/config.json`:
 Set the MCP URL via environment variable before running codex:
 
 ```bash
-export MCP_HTTP_PORT=12306
+export MCP_HTTP_PORT=12307
 ```
 
 ## Claude Code Configuration
@@ -41,13 +45,13 @@ Add the following to your `~/.claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "agent-chrome-mcp": {
-      "url": "http://127.0.0.1:12306/mcp"
+      "url": "http://127.0.0.1:12307/mcp"
     }
   }
 }
 ```
 
-### Option 2: Stdio Server (Alternative)
+### Option 2: Stdio Server (Recommended)
 
 If you prefer stdio-based MCP communication:
 
@@ -55,8 +59,8 @@ If you prefer stdio-based MCP communication:
 {
   "mcpServers": {
     "agent-chrome-mcp": {
-      "command": "node",
-      "args": ["/path/to/mcp-chrome/dist/mcp/mcp-server-stdio.js"]
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
     }
   }
 }
@@ -79,7 +83,7 @@ After configuration, the CLI tools should be able to see and use Agent Chrome MC
 If you get "connection refused" errors:
 
 1. Ensure the Chrome extension is installed and the native server is running
-2. Check that the port matches (default: 12306)
+2. Check that the port matches (default: 12307)
 3. Verify no firewall is blocking localhost connections
 4. Run `agent-chrome-mcp doctor` to diagnose issues
 
@@ -93,7 +97,7 @@ If MCP tools don't appear in the CLI:
 
 ### Port Conflicts
 
-If port 12306 is already in use:
+If port 12307 is already in use:
 
 1. Set a custom port in the extension settings
 2. Update the CLI configuration to match the new port
@@ -103,6 +107,6 @@ If port 12306 is already in use:
 
 | Variable                     | Description                            | Default |
 | ---------------------------- | -------------------------------------- | ------- |
-| `MCP_HTTP_PORT`              | HTTP port for MCP server               | 12306   |
+| `MCP_HTTP_PORT`              | HTTP port for MCP server               | 12307   |
 | `MCP_ALLOWED_WORKSPACE_BASE` | Additional allowed workspace directory | (none)  |
 | `CHROME_MCP_NODE_PATH`       | Override Node.js executable path       | (auto)  |

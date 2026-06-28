@@ -544,7 +544,7 @@ const mcpConfigJson = computed(() => {
     mcpServers: {
       'agent-chrome-mcp': {
         command: 'npx',
-        args: ['-y', 'agent-chrome-mcp@latest', 'stdio'],
+        args: ['-y', '--registry=https://registry.npmjs.org', 'agent-chrome-mcp@latest', 'stdio'],
       },
     },
   };

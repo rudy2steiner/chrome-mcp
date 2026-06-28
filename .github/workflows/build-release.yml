@@ -44,7 +44,7 @@ jobs:
         run: pnpm --filter agent-chrome-mcp-shared build
 
       - name: Test native bridge
-        run: pnpm --filter agent-chrome-mcp test -- --runInBand
+        run: pnpm --filter agent-chrome-mcp test --runInBand
 
       - name: Test Chrome extension
         run: pnpm --filter agent-chrome-mcp-extension test
@@ -141,7 +141,7 @@ jobs:
             "mcpServers": {
               "agent-chrome-mcp": {
                 "command": "npx",
-                "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+                "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
               }
             }
           }
@@ -180,7 +180,7 @@ jobs:
               "mcpServers": {
                 "agent-chrome-mcp": {
                   "command": "npx",
-                  "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+                  "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
                 }
               }
             }

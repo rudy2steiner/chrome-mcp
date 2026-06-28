@@ -1,5 +1,7 @@
 # windows 安装指南 🔧
 
+**📖 文档**: [中文](WINDOWS_INSTALL_zh.md)
+
 Agent Chrome MCP 在windows电脑的详细安装和配置步骤
 
 ## 📋 安装
@@ -17,22 +19,45 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
    - 点击"复制配置"
      <img width="475" alt="截屏2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
-3. **在 CherryStudio 或其他 Agent 中使用**
+3. **让 Agent 帮你安装**
 
-推荐使用 stdio 配置。把下面配置粘贴到 Agent 的 MCP 设置里，然后重启 Agent：
+把下面这段提示词发给 Agent：
+
+```text
+请为当前 Agent 安装 Agent Chrome MCP。
+
+使用这个 MCP server 配置：
+
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+
+把它添加到当前 Agent 的 MCP 设置里。不要使用全局 npm install。更新配置后告诉我保存到了哪里，并提醒我重启 Agent。也提醒我从 https://github.com/rudy2steiner/chrome-mcp/releases/latest 安装 Chrome 扩展，并在扩展弹窗里点击"连接"。
+```
+
+4. **重启并连接**
+
+重启 Agent。然后打开插件弹窗并点击"连接"。查看工具列表，如果能列出工具，说明已经可以使用了。
+
+### 手动 MCP 配置
+
+如果你想手动编辑配置，把下面配置添加到 Agent 的 MCP 设置里：
 
 ```json
 {
   "mcpServers": {
     "agent-chrome-mcp": {
       "command": "npx",
-      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
     }
   }
 }
 ```
-
-Agent 重启后，打开插件弹窗并点击"连接"。查看工具列表，如果能列出工具，说明已经可以使用了。
 
 HTTP 方式只作为高级用法：扩展启动本地桥接后，端点是 `http://127.0.0.1:12307/mcp`。
 

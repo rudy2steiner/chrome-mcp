@@ -1,5 +1,7 @@
 # Agent Chrome MCP Release Install
 
+**📖 Documentation**: [English](README.md) | [中文](README_zh.md)
+
 ## Download
 
 Download the latest `agent-chrome-mcp-extension.zip` from:
@@ -15,22 +17,43 @@ https://github.com/rudy2steiner/chrome-mcp/releases/latest
 5. Select the unzipped folder that contains `manifest.json`.
 6. Open the Agent Chrome MCP extension popup and click Copy Configuration.
 
-## Add The MCP Server To Your Agent
+## Ask Your Agent To Install It
 
-Paste this config into your agent MCP settings, then restart the agent:
+Copy this prompt into your agent:
+
+```text
+Install Agent Chrome MCP for this agent.
+
+Use this MCP server config:
+
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+
+Add it to this agent's MCP settings. Do not use a global npm install. After updating the config, tell me where you saved it and remind me to restart the agent. Also remind me to install the Chrome extension from https://github.com/rudy2steiner/chrome-mcp/releases/latest and click Connect in the extension popup.
+```
+
+Then restart the agent and click Connect in the extension popup.
+
+## Manual MCP Config
+
+If you prefer to edit the config yourself, add this to your agent MCP settings:
 
 ```json
 {
   "mcpServers": {
     "agent-chrome-mcp": {
       "command": "npx",
-      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
     }
   }
 }
 ```
-
-After the agent restarts, open the extension popup and click Connect.
 
 ## Advanced: Global Install
 
@@ -54,3 +77,7 @@ Then use:
 ## Advanced: HTTP
 
 The HTTP endpoint is `http://127.0.0.1:12307/mcp` after the extension starts the local bridge. Prefer stdio unless your MCP client specifically needs HTTP.
+
+## Acknowledgements
+
+Special thanks to the original [hangwin/mcp-chrome](https://github.com/hangwin/mcp-chrome) project and its author, **hangye**, whose work laid the foundation for Agent Chrome MCP.

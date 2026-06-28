@@ -1,5 +1,7 @@
 # Agent Chrome MCP Bridge 安装指南
 
+**📖 文档**: [中文](install.md)
+
 本文档详细说明了 Agent Chrome MCP Bridge 的安装和注册流程。
 
 ## 安装流程概述

@@ -1,5 +1,7 @@
 # Contributing Guide 🤝
 
+**📖 Documentation**: [English](CONTRIBUTING.md) | [中文](CONTRIBUTING_zh.md)
+
 Thank you for your interest in contributing to Agent Chrome MCP! This document provides guidelines and information for contributors.
 
 ## 🎯 How to Contribute

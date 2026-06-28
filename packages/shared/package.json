@@ -1,7 +1,10 @@
 {
   "name": "agent-chrome-mcp-shared",
   "version": "1.0.3",
-  "author": "hangye",
+  "author": "rudy2steiner",
+  "contributors": [
+    "hangye"
+  ],
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
   "types": "dist/index.d.ts",
