@@ -8,8 +8,9 @@ Agent Chrome MCP 面向基于浏览器的工作自动化，不只限于编码场
 
 ## 安装与分发
 
-- **Agent 优先安装提示词**：用户可以让任意支持 MCP 的 Agent 代为添加 MCP 配置。
-- **无需全局 npm 安装**：Agent 可通过 `npx` 启动本地 MCP 桥接服务。
+- **Agent 优先连接提示词**：用户可以让任意支持 MCP 的 Agent 代为添加 MCP 配置，并在需要时处理回退方案。
+- **npx 优先安装**：推荐配置使用带 `--registry=https://registry.npmjs.org` 的 `npx`，提供最简单的安装路径。
+- **直接 Node.js 回退方案**：严格 MCP 客户端如果通过 `npx` 卡住，可以直接用 Node.js 启动已安装的 stdio server 文件。
 - **注册表安全的 npm 配置**：推荐配置包含 `--registry=https://registry.npmjs.org`，避免私有 npm 镜像问题。
 - **Chrome 扩展发布 zip**：用户从 release 产物加载已解压的扩展。
 - **扩展弹窗可复制配置**：扩展中展示推荐的 MCP 服务器配置。

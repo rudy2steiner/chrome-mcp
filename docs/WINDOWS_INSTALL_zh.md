@@ -4,10 +4,17 @@
 
 Agent Chrome MCP 在windows电脑的详细安装和配置步骤
 
+## 环境要求
+
+- Chrome/Chromium 浏览器
+- 支持 MCP 的 Agent 或 MCP 客户端
+- Node.js `20+`
+- 终端中可以使用 npm 和 npx；正常安装 Node.js 时，npx 会随 npm 一起提供
+
 ## 📋 安装
 
 1. **下载最新版本**
-   - 从 https://github.com/rudy2steiner/chrome-mcp/releases/latest 下载 `agent-chrome-mcp-extension.zip`
+   - 从 https://github.com/rudy2steiner/agent-chrome-agent/releases/latest 下载 `agent-chrome-mcp-extension.zip`
    - 解压 zip 文件
 
 2. **加载 Chrome 扩展**
@@ -19,14 +26,18 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
    - 点击"复制配置"
      <img width="475" alt="截屏2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
-3. **让 Agent 帮你安装**
+3. **让 Agent 帮你连接**
 
 把下面这段提示词发给 Agent：
 
 ```text
-请为当前 Agent 安装 Agent Chrome MCP。
+请为当前 Agent 连接 Agent Chrome MCP。
 
-使用这个 MCP server 配置：
+要求：
+- 优先使用简单的 npx 配置。
+- 如果当前 Agent 无法通过 npx 启动 MCP stdio，再回退到下面的直接 Node.js 配置。
+
+首选 MCP server 配置：
 
 {
   "mcpServers": {
@@ -37,7 +48,18 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
   }
 }
 
-把它添加到当前 Agent 的 MCP 设置里。不要使用全局 npm install。更新配置后告诉我保存到了哪里，并提醒我重启 Agent。也提醒我从 https://github.com/rudy2steiner/chrome-mcp/releases/latest 安装 Chrome 扩展，并在扩展弹窗里点击"连接"。
+如果缺少环境要求、扩展加载或回退配置，请先按手动安装指南操作：
+https://github.com/rudy2steiner/agent-chrome-agent#-快速开始
+
+如果按手动指南操作后 npx 仍卡住，或者 Agent 无法列出 MCP tools：
+1. 运行 npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
+2. 用 node -p "process.execPath" 获取 node 绝对路径
+3. 用 npm root -g 获取全局 npm root
+4. command 使用 node 绝对路径，args 使用：
+   <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
+5. 添加环境变量 CHROME_MCP_SKIP_AUTO_REGISTER=1。
+
+更新 MCP 配置后告诉我保存到了哪里，以及使用的是哪种配置方式。提醒我重启 Agent，必要时确认已从 https://github.com/rudy2steiner/agent-chrome-agent/releases/latest 加载 Chrome 扩展，并在扩展弹窗里点击"连接"。
 ```
 
 4. **重启并连接**
@@ -59,18 +81,50 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
 }
 ```
 
-HTTP 方式只作为高级用法：扩展启动本地桥接后，端点是 `http://127.0.0.1:12307/mcp`。
+### Streamable HTTP 连接方式
+
+只有当你的 MCP 客户端直接支持 HTTP MCP server 时，才使用 Streamable HTTP。大多数本地 Agent 仍推荐使用 stdio。
+
+添加 HTTP 配置前：
+
+1. 在 Chrome 中加载 Agent Chrome MCP 扩展。
+2. 打开扩展弹窗。
+3. 点击"连接"。
+4. 确认弹窗显示本地桥接服务运行在端口 `12307`。
+
+然后把下面配置添加到客户端的 MCP 设置里：
 
 ```json
 {
   "mcpServers": {
-    "agent-chrome-mcp": {
+    "agent-chrome-mcp-http": {
+      "type": "streamableHttp",
+      "url": "http://127.0.0.1:12307/mcp"
+    }
+  }
+}
+```
+
+有些客户端使用短横线命名：
+
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp-http": {
       "type": "streamable-http",
       "url": "http://127.0.0.1:12307/mcp"
     }
   }
 }
 ```
+
+如果客户端提示 server type 不合法，在 `streamableHttp` 和 `streamable-http` 之间切换。
+
+排查：
+
+- `Invalid or missing MCP session ID for SSE` 通常表示你把 URL 直接用浏览器打开了。这个 URL 需要添加到 Agent 的 MCP 配置里。
+- Connection refused 表示扩展还没有启动本地桥接服务。打开扩展弹窗并点击"连接"。
+- 如果弹窗里修改过端口，请使用弹窗显示的端口，而不是 `12307`。
 
 ## 🚀 安装和连接问题
 

@@ -7,11 +7,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.34]
+
+### Changed
+
+- Use a separate MCP server instance per SSE and streamable HTTP session to avoid reusing one SDK server across transports.
+- Keep the npx-first install path with a direct Node.js fallback for strict stdio clients.
+- Expanded Streamable HTTP connection docs with config variants, connection order, and troubleshooting.
+- Bumped native bridge and Chrome extension package versions to `1.0.34`.
+
 ## [v1.0.33]
 
 ### Added
 
-- Agent-first install prompt so users can ask their MCP agent to add the configuration.
+- Agent-first connect prompt so users can ask their MCP agent to add the configuration and handle fallback if needed.
 - npm-facing install guide for `agent-chrome-mcp`.
 - Registry-safe `npx` MCP configuration using `--registry=https://registry.npmjs.org`.
 - Maintained feature list in `docs/FEATURES.md`.
@@ -20,7 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Broadened product positioning from coding-agent setup to general browser work automation.
-- Repositioned installation around the agent-first setup flow.
+- Repositioned installation around an `npx`-first setup with a direct Node.js fallback for strict MCP clients.
+- Documented why some clients may need the direct Node.js fallback when their `npx`/`npm exec` wrapper hangs long-running MCP stdio servers.
 - Updated the extension popup copyable MCP config to use the registry-safe `npx` command.
 - Updated release workflow generated MCP config and release install instructions.
 - Replaced the old native package README that described an internal Fastify service with a user-facing npm guide.

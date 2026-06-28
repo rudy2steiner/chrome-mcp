@@ -20,9 +20,10 @@ import {
 import { NativeMessagingHost } from '../native-messaging-host';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import type { Server as McpSdkServer } from '@modelcontextprotocol/sdk/server/index.js';
 import { randomUUID } from 'node:crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
-import { getMcpServer } from '../mcp/mcp-server';
+import { createMcpServer } from '../mcp/mcp-server';
 import { AgentStreamManager } from '../agent/stream-manager';
 import { AgentChatService } from '../agent/chat-service';
 import { CodexEngine } from '../agent/engines/codex';
@@ -38,6 +39,8 @@ interface ExtensionRequestPayload {
   data?: unknown;
 }
 
+type McpTransport = StreamableHTTPServerTransport | SSEServerTransport;
+
 // ============================================================
 // Server Class
 // ============================================================
@@ -46,8 +49,8 @@ export class Server {
   private fastify: FastifyInstance;
   public isRunning = false;
   private nativeHost: NativeMessagingHost | null = null;
-  private transportsMap: Map<string, StreamableHTTPServerTransport | SSEServerTransport> =
-    new Map();
+  private transportsMap: Map<string, McpTransport> = new Map();
+  private mcpServersMap: Map<string, McpSdkServer> = new Map();
   private agentStreamManager: AgentStreamManager;
   private agentChatService: AgentChatService;
 
@@ -167,6 +170,7 @@ export class Server {
   private setupMcpRoutes(): void {
     // SSE endpoint
     this.fastify.get('/sse', async (_, reply) => {
+      let transport: SSEServerTransport | undefined;
       try {
         reply.raw.writeHead(HTTP_STATUS.OK, {
           'Content-Type': 'text/event-stream',
@@ -174,18 +178,25 @@ export class Server {
           Connection: 'keep-alive',
         });
 
-        const transport = new SSEServerTransport('/messages', reply.raw);
+        transport = new SSEServerTransport('/messages', reply.raw);
+        const server = createMcpServer();
         this.transportsMap.set(transport.sessionId, transport);
+        this.mcpServersMap.set(transport.sessionId, server);
 
+        const activeTransport = transport;
         reply.raw.on('close', () => {
-          this.transportsMap.delete(transport.sessionId);
+          this.transportsMap.delete(activeTransport.sessionId);
+          this.mcpServersMap.delete(activeTransport.sessionId);
         });
 
-        const server = getMcpServer();
         await server.connect(transport);
 
         reply.raw.write(':\n\n');
       } catch (error) {
+        if (transport) {
+          this.transportsMap.delete(transport.sessionId);
+          this.mcpServersMap.delete(transport.sessionId);
+        }
         if (!reply.sent) {
           reply.code(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(ERROR_MESSAGES.INTERNAL_SERVER_ERROR);
         }
@@ -221,11 +232,13 @@ export class Server {
         // Transport found, proceed
       } else if (isInitializeRequest(request.body)) {
         const newSessionId = randomUUID();
+        const server = createMcpServer();
         transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => newSessionId,
           onsessioninitialized: (initializedSessionId) => {
             if (transport && initializedSessionId === newSessionId) {
               this.transportsMap.set(initializedSessionId, transport);
+              this.mcpServersMap.set(initializedSessionId, server);
             }
           },
         });
@@ -233,9 +246,10 @@ export class Server {
         transport.onclose = () => {
           if (transport?.sessionId && this.transportsMap.get(transport.sessionId)) {
             this.transportsMap.delete(transport.sessionId);
+            this.mcpServersMap.delete(transport.sessionId);
           }
         };
-        await getMcpServer().connect(transport);
+        await server.connect(transport);
       } else {
         reply.code(HTTP_STATUS.BAD_REQUEST).send({ error: ERROR_MESSAGES.INVALID_MCP_REQUEST });
         return;
@@ -348,9 +362,13 @@ export class Server {
 
     try {
       await this.fastify.close();
+      this.transportsMap.clear();
+      this.mcpServersMap.clear();
       closeDb();
       this.isRunning = false;
     } catch (err) {
+      this.transportsMap.clear();
+      this.mcpServersMap.clear();
       this.isRunning = false;
       closeDb();
       throw err;

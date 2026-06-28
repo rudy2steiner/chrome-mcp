@@ -7,11 +7,20 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.0.34]
+
+### 变更
+
+- 为每个 SSE 和 streamable HTTP 会话创建独立的 MCP server 实例，避免一个 SDK server 在多个 transport 之间复用。
+- 保持 npx 优先安装路径，同时为严格 stdio 客户端保留直接 Node.js 回退方案。
+- 扩展 Streamable HTTP 连接文档，补充配置变体、连接顺序和排查说明。
+- 将 native bridge 和 Chrome 扩展包版本提升至 `1.0.34`。
+
 ## [v1.0.33]
 
 ### 新增
 
-- Agent 优先安装提示词，用户可让 MCP Agent 代为添加配置。
+- Agent 优先连接提示词，用户可让 MCP Agent 代为添加配置，并在需要时处理回退方案。
 - 面向 npm 用户的 `agent-chrome-mcp` 安装指南。
 - 使用 `--registry=https://registry.npmjs.org` 的注册表安全 `npx` MCP 配置。
 - 在 `docs/FEATURES.md` 中维护功能列表。
@@ -20,7 +29,8 @@
 ### 变更
 
 - 将产品定位从编码 Agent 安装扩展为通用浏览器工作自动化。
-- 围绕 Agent 优先安装流程重构安装说明。
+- 围绕 `npx` 优先、直接 Node.js 回退的方式重构安装说明。
+- 说明部分客户端的 `npx`/`npm exec` 包装层可能导致长期运行的 MCP stdio server 卡住，因此需要直接 Node.js 回退方案。
 - 更新扩展弹窗可复制 MCP 配置，使用注册表安全的 `npx` 命令。
 - 更新 release 工作流生成的 MCP 配置和 release 安装说明。
 - 替换原先描述内部 Fastify 服务的 native 包 README，改为面向用户的 npm 指南。

@@ -1,10 +1,10 @@
 # Agent Chrome MCP 🚀
 
-[![Stars](https://img.shields.io/github/stars/rudy2steiner/chrome-mcp)](https://img.shields.io/github/stars/rudy2steiner/chrome-mcp)
+[![Stars](https://img.shields.io/github/stars/rudy2steiner/agent-chrome-agent)](https://img.shields.io/github/stars/rudy2steiner/agent-chrome-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://www.typescriptlang.org/)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://developer.chrome.com/docs/extensions/)
-[![Release](https://img.shields.io/github/v/release/rudy2steiner/chrome-mcp.svg)](https://img.shields.io/github/v/release/rudy2steiner/chrome-mcp.svg)
+[![Release](https://img.shields.io/github/v/release/rudy2steiner/agent-chrome-agent.svg)](https://img.shields.io/github/v/release/rudy2steiner/agent-chrome-agent.svg)
 
 > 🌟 **Turn your Chrome browser into an agent-powered work automation tool** - Let AI operate your own browser for research, operations, QA, data entry, content workflows, and coding tasks.
 
@@ -22,7 +22,7 @@ Unlike traditional browser automation tools (like Playwright), **Agent Chrome MC
 
 ## 🤝 Works with Trending Agents
 
-Agent Chrome MCP works with any MCP-capable agent—no vendor lock-in. Install the Chrome extension, then **ask your agent to install it** with the prompt below.
+Agent Chrome MCP works with any MCP-capable agent—no vendor lock-in. Install the Chrome extension, then **ask your agent to connect it** with the prompt below.
 
 ### Cowork agents
 
@@ -38,14 +38,18 @@ Agent Chrome MCP works with any MCP-capable agent—no vendor lock-in. Install t
 - [Cherry Studio](https://cherry-ai.com)
 - [Augment](https://augmentcode.com)
 
-### Ask your agent to install it
+### Ask your agent to connect it
 
 Copy this prompt into your agent:
 
 ```text
-Install Agent Chrome MCP for this agent.
+Connect Agent Chrome MCP to this agent.
 
-Use this MCP server config:
+Requirements:
+- Use the simple npx config first.
+- If this agent cannot start MCP stdio through npx, falls back to the direct Node.js config below.
+
+Primary MCP server config:
 
 {
   "mcpServers": {
@@ -56,7 +60,18 @@ Use this MCP server config:
   }
 }
 
-Add it to this agent's MCP settings. Do not use a global npm install. After updating the config, tell me where you saved it and remind me to restart the agent. Also remind me to install the Chrome extension from https://github.com/rudy2steiner/chrome-mcp/releases/latest and click Connect in the extension popup.
+If prerequisites, extension loading, or fallback setup are missing, follow the manual install guide first:
+https://github.com/rudy2steiner/agent-chrome-agent#-quick-start
+
+Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
+1. Run npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
+2. Resolve node path with: node -p "process.execPath"
+3. Resolve global npm root with: npm root -g
+4. Configure command as the absolute node path and args as:
+   <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
+5. Add env CHROME_MCP_SKIP_AUTO_REGISTER=1.
+
+After updating the MCP config, tell me where you saved it and which config style you used. Remind me to restart the agent, confirm the Chrome extension is loaded from https://github.com/rudy2steiner/agent-chrome-agent/releases/latest if needed, and click Connect in the extension popup.
 ```
 
 Restart the agent, then open the extension popup and click **Connect**. See [Quick Start](#-quick-start) for extension installation steps.
@@ -93,19 +108,21 @@ See the maintained feature list: [docs/FEATURES.md](docs/FEATURES.md) | [中文]
 
 ## 🚀 Quick Start
 
-No global npm install required. Install the Chrome extension, then ask your agent to add the MCP config with the copyable prompt below.
+Install the Chrome extension, then ask your agent to add the MCP config with the copyable prompt below.
 
 ### Prerequisites
 
 - Chrome/Chromium browser
 - An MCP-capable cowork agent such as Claude Cowork, Claude Code, Codex, Cursor, QoderWork, or ChatGPT
+- Node.js `20+`
+- npm and npx available in your terminal; npx is bundled with npm in normal Node.js installs
 
-The recommended setup uses `npx` so users do not need to run `npm install -g`.
+The recommended setup starts with `npx` because it is the easiest path for most users. If an agent cannot keep a long-running MCP stdio server alive through `npx`, use the direct Node.js fallback.
 
 ### Installation Steps
 
 1. **Download the latest release**
-   - Download `agent-chrome-mcp-extension.zip` from https://github.com/rudy2steiner/chrome-mcp/releases/latest
+   - Download `agent-chrome-mcp-extension.zip` from https://github.com/rudy2steiner/agent-chrome-agent/releases/latest
    - Unzip it.
 
 2. **Load the Chrome extension**
@@ -117,14 +134,18 @@ The recommended setup uses `npx` so users do not need to run `npm install -g`.
    - Click "Copy Configuration"
      <img width="475" alt="Screenshot 2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
-3. **Ask your agent to install it**
+3. **Ask your agent to connect it**
 
 Copy this prompt into your agent:
 
 ```text
-Install Agent Chrome MCP for this agent.
+Connect Agent Chrome MCP to this agent.
 
-Use this MCP server config:
+Requirements:
+- Use the simple npx config first.
+- If this agent cannot start MCP stdio through npx, falls back to the direct Node.js config below.
+
+Primary MCP server config:
 
 {
   "mcpServers": {
@@ -135,7 +156,18 @@ Use this MCP server config:
   }
 }
 
-Add it to this agent's MCP settings. Do not use a global npm install. After updating the config, tell me where you saved it and remind me to restart the agent. Also remind me to install the Chrome extension from https://github.com/rudy2steiner/chrome-mcp/releases/latest and click Connect in the extension popup.
+If prerequisites, extension loading, or fallback setup are missing, follow the manual install guide first:
+https://github.com/rudy2steiner/agent-chrome-agent#-quick-start
+
+Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
+1. Run npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
+2. Resolve node path with: node -p "process.execPath"
+3. Resolve global npm root with: npm root -g
+4. Configure command as the absolute node path and args as:
+   <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
+5. Add env CHROME_MCP_SKIP_AUTO_REGISTER=1.
+
+After updating the MCP config, tell me where you saved it and which config style you used. Remind me to restart the agent, confirm the Chrome extension is loaded from https://github.com/rudy2steiner/agent-chrome-agent/releases/latest if needed, and click Connect in the extension popup.
 ```
 
 4. **Restart and connect**
@@ -176,14 +208,23 @@ Add Agent Chrome MCP as a normal stdio MCP server. The stdio entry point perform
 }
 ```
 
-If you prefer a global install, run `npm install -g agent-chrome-mcp`, then use:
+If `npx` hangs or your agent cannot list MCP tools, use the direct Node.js fallback:
+
+```bash
+npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
+node -p "process.execPath"
+npm root -g
+```
 
 ```json
 {
   "mcpServers": {
     "agent-chrome-mcp": {
-      "command": "agent-chrome-mcp",
-      "args": ["stdio"]
+      "command": "<absolute node path>",
+      "args": ["<npm root -g>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js"],
+      "env": {
+        "CHROME_MCP_SKIP_AUTO_REGISTER": "1"
+      }
     }
   }
 }
@@ -191,10 +232,21 @@ If you prefer a global install, run `npm install -g agent-chrome-mcp`, then use:
 
 #### Using Streamable HTTP Connection
 
+Use Streamable HTTP only when your MCP client supports HTTP MCP servers directly. For most local agents, stdio is still the recommended setup.
+
+Before adding the HTTP config:
+
+1. Load the Agent Chrome MCP extension in Chrome.
+2. Open the extension popup.
+3. Click **Connect**.
+4. Confirm the popup shows the local bridge running on port `12307`.
+
+Then add this MCP server to your client:
+
 ```json
 {
   "mcpServers": {
-    "agent-chrome-mcp-extension": {
+    "agent-chrome-mcp-http": {
       "type": "streamableHttp",
       "url": "http://127.0.0.1:12307/mcp"
     }
@@ -202,7 +254,26 @@ If you prefer a global install, run `npm install -g agent-chrome-mcp`, then use:
 }
 ```
 
-Use HTTP only after the Chrome extension has started the local bridge at `http://127.0.0.1:12307`.
+Some clients use the kebab-case type name instead:
+
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp-http": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:12307/mcp"
+    }
+  }
+}
+```
+
+If your client reports an invalid server type, switch between `streamableHttp` and `streamable-http`.
+
+Troubleshooting:
+
+- `Invalid or missing MCP session ID for SSE` usually means the URL was opened directly in a browser tab. Add it as an MCP server in your agent instead.
+- Connection refused means the extension has not started the local bridge yet. Open the extension popup and click **Connect**.
+- If port `12307` was changed in the popup, use the port shown there.
 
 eg：config in augment:
 

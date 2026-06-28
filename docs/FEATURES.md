@@ -8,8 +8,9 @@ Agent Chrome MCP is for browser-based work automation, not only coding. Target s
 
 ## Setup And Distribution
 
-- **Agent-first install prompt**: users can ask any MCP-compatible agent to add the MCP config for them.
-- **No global npm install required**: agents can launch the local MCP bridge with `npx`.
+- **Agent-first connect prompt**: users can ask any MCP-compatible agent to add the MCP config and handle fallback if needed.
+- **npx-first setup**: recommended configs use `npx` with `--registry=https://registry.npmjs.org` for the easiest install path.
+- **Direct Node.js fallback**: strict MCP clients that hang through `npx` can launch the installed stdio server file directly with Node.js.
 - **Registry-safe npm config**: recommended configs include `--registry=https://registry.npmjs.org` to avoid private npm mirror issues.
 - **Chrome extension release zip**: users load the unpacked extension from the release artifact.
 - **Copyable config in extension popup**: the extension shows the recommended MCP server configuration.

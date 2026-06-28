@@ -38,10 +38,24 @@ const fallbackMessages: Record<string, string> = {
   // Configuration labels
   mcpServerConfigLabel: 'MCP Server Configuration',
   mcpConfigHelpText:
-    'Copy this into your agent MCP settings. The agent starts the bridge automatically.',
+    'Copy this into your agent MCP settings. Use direct Node.js only if npx hangs.',
+  mcpConfigModeLabel: 'MCP connection type',
+  mcpConfigModeNpx: 'npx stdio',
+  mcpConfigModeHttp: 'Streamable HTTP',
   connectionPortLabel: 'Connection Port',
   refreshStatusButton: 'Refresh Status',
   copyConfigButton: 'Copy Configuration',
+  serverReadinessLabel: 'Make sure MCP server is up',
+  serverReadinessGuideButton: 'Install Guide',
+  serverReadinessReady: 'Ready',
+  serverReadinessNotReady: 'Check',
+  serverReadinessStepPrereq: 'If Node/npm/npx or extension loading is missing, open Install Guide.',
+  serverReadinessStepConfig: 'Copy the selected MCP config into your agent settings.',
+  serverReadinessStepRestart: 'Restart the agent once so it can start/register the local bridge.',
+  serverReadinessStepConnect: 'Click Connect here and wait for Chrome Native Messaging.',
+  serverReadinessStepRunning: 'Running Status should show Service Running with a port.',
+  serverReadinessStepPing: 'Open {0}; it should return pong.',
+  serverReadinessStepRepair: 'If it still fails, run: npx -y agent-chrome-mcp@latest doctor --fix',
 
   // Action buttons
   retryButton: 'Retry',

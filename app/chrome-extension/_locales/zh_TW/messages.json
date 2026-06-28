@@ -90,8 +90,20 @@
     "description": "MCP 伺服器設定區段標籤"
   },
   "mcpConfigHelpText": {
-    "message": "複製到你的 Agent MCP 設定中，Agent 會自動啟動橋接服務。",
+    "message": "複製到你的 Agent MCP 設定中。只有 npx 卡住時才使用直接 Node.js。",
     "description": "產生的 MCP 設定的簡短設定說明"
+  },
+  "mcpConfigModeLabel": {
+    "message": "MCP 連線類型",
+    "description": "MCP 設定連線類型選擇器的無障礙標籤"
+  },
+  "mcpConfigModeNpx": {
+    "message": "npx stdio",
+    "description": "npx stdio MCP 設定選項"
+  },
+  "mcpConfigModeHttp": {
+    "message": "Streamable HTTP",
+    "description": "Streamable HTTP MCP 設定選項"
   },
   "connectionPortLabel": {
     "message": "連結埠",
@@ -104,6 +116,50 @@
   "copyConfigButton": {
     "message": "複製設定",
     "description": "複製設定按鈕文字"
+  },
+  "serverReadinessLabel": {
+    "message": "確認 MCP server 已啟動",
+    "description": "伺服器就緒檢查標題"
+  },
+  "serverReadinessGuideButton": {
+    "message": "安裝指南",
+    "description": "開啟手動安裝指南的按鈕"
+  },
+  "serverReadinessReady": {
+    "message": "已就緒",
+    "description": "伺服器就緒狀態"
+  },
+  "serverReadinessNotReady": {
+    "message": "待檢查",
+    "description": "伺服器未就緒狀態"
+  },
+  "serverReadinessStepPrereq": {
+    "message": "如果缺少 Node/npm/npx 或擴充功能載入步驟，開啟安裝指南。",
+    "description": "伺服器就緒檢查環境需求步驟"
+  },
+  "serverReadinessStepConfig": {
+    "message": "把選取的 MCP 設定複製到 Agent 設定中。",
+    "description": "伺服器就緒檢查 MCP 設定步驟"
+  },
+  "serverReadinessStepRestart": {
+    "message": "重新啟動一次 Agent，讓它啟動/註冊本地橋接服務。",
+    "description": "伺服器就緒檢查 Agent 重新啟動步驟"
+  },
+  "serverReadinessStepConnect": {
+    "message": "在這裡點擊連線，並等待 Chrome Native Messaging。",
+    "description": "伺服器就緒檢查 Native 連線步驟"
+  },
+  "serverReadinessStepRunning": {
+    "message": "執行狀態應顯示 Service Running 和連接埠。",
+    "description": "伺服器就緒檢查執行狀態步驟"
+  },
+  "serverReadinessStepPing": {
+    "message": "開啟 {0}，應該返回 pong。",
+    "description": "伺服器就緒檢查 ping 步驟"
+  },
+  "serverReadinessStepRepair": {
+    "message": "如果仍失敗，執行：npx -y agent-chrome-mcp@latest doctor --fix",
+    "description": "伺服器就緒檢查修復命令步驟"
   },
   "retryButton": {
     "message": "重試",

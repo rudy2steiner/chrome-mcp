@@ -90,8 +90,20 @@
     "description": "MCP server configuration section label"
   },
   "mcpConfigHelpText": {
-    "message": "Copy this into your agent MCP settings. The agent starts the bridge automatically.",
+    "message": "Copy this into your agent MCP settings. Use direct Node.js only if npx hangs.",
     "description": "Short setup instruction for generated MCP config"
+  },
+  "mcpConfigModeLabel": {
+    "message": "MCP connection type",
+    "description": "Accessible label for MCP config connection type selector"
+  },
+  "mcpConfigModeNpx": {
+    "message": "npx stdio",
+    "description": "MCP config option for npx stdio"
+  },
+  "mcpConfigModeHttp": {
+    "message": "Streamable HTTP",
+    "description": "MCP config option for Streamable HTTP"
   },
   "connectionPortLabel": {
     "message": "Connection Port",
@@ -104,6 +116,50 @@
   "copyConfigButton": {
     "message": "Copy Configuration",
     "description": "Copy configuration button text"
+  },
+  "serverReadinessLabel": {
+    "message": "Make sure MCP server is up",
+    "description": "Server readiness checklist label"
+  },
+  "serverReadinessGuideButton": {
+    "message": "Install Guide",
+    "description": "Button that opens the manual install guide"
+  },
+  "serverReadinessReady": {
+    "message": "Ready",
+    "description": "Server readiness ready badge"
+  },
+  "serverReadinessNotReady": {
+    "message": "Check",
+    "description": "Server readiness not ready badge"
+  },
+  "serverReadinessStepPrereq": {
+    "message": "If Node/npm/npx or extension loading is missing, open Install Guide.",
+    "description": "Server readiness checklist prerequisite step"
+  },
+  "serverReadinessStepConfig": {
+    "message": "Copy the selected MCP config into your agent settings.",
+    "description": "Server readiness checklist MCP config step"
+  },
+  "serverReadinessStepRestart": {
+    "message": "Restart the agent once so it can start/register the local bridge.",
+    "description": "Server readiness checklist agent restart step"
+  },
+  "serverReadinessStepConnect": {
+    "message": "Click Connect here and wait for Chrome Native Messaging.",
+    "description": "Server readiness checklist native connection step"
+  },
+  "serverReadinessStepRunning": {
+    "message": "Running Status should show Service Running with a port.",
+    "description": "Server readiness checklist running status step"
+  },
+  "serverReadinessStepPing": {
+    "message": "Open {0}; it should return pong.",
+    "description": "Server readiness checklist ping step"
+  },
+  "serverReadinessStepRepair": {
+    "message": "If it still fails, run: npx -y agent-chrome-mcp@latest doctor --fix",
+    "description": "Server readiness checklist repair command step"
   },
   "retryButton": {
     "message": "Retry",

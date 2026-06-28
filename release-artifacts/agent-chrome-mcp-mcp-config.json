@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}

@@ -20,6 +20,30 @@
                 </button>
               </div>
               <p class="mcp-config-help">{{ getMessage('mcpConfigHelpText') }}</p>
+              <div
+                class="mcp-config-mode"
+                role="tablist"
+                :aria-label="getMessage('mcpConfigModeLabel')"
+              >
+                <button
+                  type="button"
+                  :class="['mcp-config-mode-button', { active: mcpConfigMode === 'npx' }]"
+                  role="tab"
+                  :aria-selected="mcpConfigMode === 'npx'"
+                  @click="setMcpConfigMode('npx')"
+                >
+                  {{ getMessage('mcpConfigModeNpx') }}
+                </button>
+                <button
+                  type="button"
+                  :class="['mcp-config-mode-button', { active: mcpConfigMode === 'http' }]"
+                  role="tab"
+                  :aria-selected="mcpConfigMode === 'http'"
+                  @click="setMcpConfigMode('http')"
+                >
+                  {{ getMessage('mcpConfigModeHttp') }}
+                </button>
+              </div>
               <div class="mcp-config-content">
                 <pre class="mcp-config-json">{{ mcpConfigJson }}</pre>
               </div>
@@ -43,6 +67,50 @@
               <div v-if="serverStatus.lastUpdated" class="status-timestamp">
                 {{ getMessage('lastUpdatedLabel') }}
                 {{ new Date(serverStatus.lastUpdated).toLocaleTimeString() }}
+              </div>
+              <div class="server-readiness">
+                <div class="server-readiness-header">
+                  <span>{{ getMessage('serverReadinessLabel') }}</span>
+                  <div class="server-readiness-actions">
+                    <button
+                      type="button"
+                      class="server-readiness-guide-button"
+                      @click="openWelcomePage"
+                    >
+                      {{ getMessage('serverReadinessGuideButton') }}
+                    </button>
+                    <span :class="['server-readiness-badge', { ready: isServerReady }]">
+                      {{
+                        isServerReady
+                          ? getMessage('serverReadinessReady')
+                          : getMessage('serverReadinessNotReady')
+                      }}
+                    </span>
+                  </div>
+                </div>
+                <ol class="server-readiness-list">
+                  <li>
+                    {{ getMessage('serverReadinessStepPrereq') }}
+                  </li>
+                  <li>
+                    {{ getMessage('serverReadinessStepConfig') }}
+                  </li>
+                  <li>
+                    {{ getMessage('serverReadinessStepRestart') }}
+                  </li>
+                  <li :class="{ done: nativeConnectionStatus === 'connected' }">
+                    {{ getMessage('serverReadinessStepConnect') }}
+                  </li>
+                  <li :class="{ done: serverStatus.isRunning }">
+                    {{ getMessage('serverReadinessStepRunning') }}
+                  </li>
+                  <li :class="{ done: serverStatus.isRunning }">
+                    {{ getMessage('serverReadinessStepPing', [serverPingUrl]) }}
+                  </li>
+                  <li>
+                    {{ getMessage('serverReadinessStepRepair') }}
+                  </li>
+                </ol>
               </div>
             </div>
 
@@ -538,8 +606,35 @@ const serverStatus = ref<{
 });
 
 const copyButtonText = ref(getMessage('copyConfigButton'));
+const mcpConfigMode = ref<'npx' | 'http'>('npx');
+
+const isServerReady = computed(
+  () => nativeConnectionStatus.value === 'connected' && serverStatus.value.isRunning,
+);
+
+const serverPingUrl = computed(() => {
+  const port = serverStatus.value.port || nativeServerPort.value || NATIVE_HOST.DEFAULT_PORT;
+  return `http://127.0.0.1:${port}/ping`;
+});
+
+const setMcpConfigMode = (mode: 'npx' | 'http') => {
+  mcpConfigMode.value = mode;
+  copyButtonText.value = getMessage('copyConfigButton');
+};
 
 const mcpConfigJson = computed(() => {
+  if (mcpConfigMode.value === 'http') {
+    const config = {
+      mcpServers: {
+        'agent-chrome-mcp-http': {
+          type: 'streamableHttp',
+          url: `http://127.0.0.1:${nativeServerPort.value}/mcp`,
+        },
+      },
+    };
+    return JSON.stringify(config, null, 2);
+  }
+
   const config = {
     mcpServers: {
       'agent-chrome-mcp': {
@@ -2039,6 +2134,79 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
+.server-readiness {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.server-readiness-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.server-readiness-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.server-readiness-guide-button {
+  appearance: none;
+  border: 0;
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.server-readiness-guide-button:hover {
+  background: #e0e7ff;
+}
+
+.server-readiness-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.server-readiness-badge.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.server-readiness-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.server-readiness-list li.done {
+  color: #15803d;
+}
+
 .mcp-config-section {
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 14px;
@@ -2063,6 +2231,45 @@ onUnmounted(() => {
   line-height: 1.45;
   color: #64748b;
   margin: 0 0 8px;
+}
+
+.mcp-config-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 8px;
+}
+
+.mcp-config-mode-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-height: 28px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.mcp-config-mode-button:hover {
+  color: #334155;
+}
+
+.mcp-config-mode-button.active {
+  background: #fff;
+  color: #2563eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .copy-config-button {

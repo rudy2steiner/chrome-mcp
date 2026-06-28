@@ -90,8 +90,20 @@
     "description": "MCP 服务器配置节标签"
   },
   "mcpConfigHelpText": {
-    "message": "复制到你的 Agent MCP 设置中，Agent 会自动启动桥接服务。",
+    "message": "复制到你的 Agent MCP 设置中。只有 npx 卡住时才使用直接 Node.js。",
     "description": "生成的 MCP 配置的简短设置说明"
+  },
+  "mcpConfigModeLabel": {
+    "message": "MCP 连接类型",
+    "description": "MCP 配置连接类型选择器的无障碍标签"
+  },
+  "mcpConfigModeNpx": {
+    "message": "npx stdio",
+    "description": "npx stdio MCP 配置选项"
+  },
+  "mcpConfigModeHttp": {
+    "message": "Streamable HTTP",
+    "description": "Streamable HTTP MCP 配置选项"
   },
   "connectionPortLabel": {
     "message": "连接端口",
@@ -104,6 +116,50 @@
   "copyConfigButton": {
     "message": "复制配置",
     "description": "复制配置按钮文本"
+  },
+  "serverReadinessLabel": {
+    "message": "确认 MCP server 已启动",
+    "description": "服务器就绪检查标题"
+  },
+  "serverReadinessGuideButton": {
+    "message": "安装指南",
+    "description": "打开手动安装指南的按钮"
+  },
+  "serverReadinessReady": {
+    "message": "已就绪",
+    "description": "服务器就绪状态"
+  },
+  "serverReadinessNotReady": {
+    "message": "待检查",
+    "description": "服务器未就绪状态"
+  },
+  "serverReadinessStepPrereq": {
+    "message": "如果缺少 Node/npm/npx 或扩展加载步骤，打开安装指南。",
+    "description": "服务器就绪检查环境要求步骤"
+  },
+  "serverReadinessStepConfig": {
+    "message": "把选中的 MCP 配置复制到 Agent 设置中。",
+    "description": "服务器就绪检查 MCP 配置步骤"
+  },
+  "serverReadinessStepRestart": {
+    "message": "重启一次 Agent，让它启动/注册本地桥接服务。",
+    "description": "服务器就绪检查 Agent 重启步骤"
+  },
+  "serverReadinessStepConnect": {
+    "message": "在这里点击连接，并等待 Chrome Native Messaging。",
+    "description": "服务器就绪检查 Native 连接步骤"
+  },
+  "serverReadinessStepRunning": {
+    "message": "运行状态应显示 Service Running 和端口。",
+    "description": "服务器就绪检查运行状态步骤"
+  },
+  "serverReadinessStepPing": {
+    "message": "打开 {0}，应该返回 pong。",
+    "description": "服务器就绪检查 ping 步骤"
+  },
+  "serverReadinessStepRepair": {
+    "message": "如果仍失败，运行：npx -y agent-chrome-mcp@latest doctor --fix",
+    "description": "服务器就绪检查修复命令步骤"
   },
   "retryButton": {
     "message": "重试",

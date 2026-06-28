@@ -61,13 +61,13 @@ jobs:
       - name: Check npm package availability
         id: npm_packages
         run: |
-          if npm view agent-chrome-mcp-shared@$(node -p "require('./packages/shared/package.json').version") version >/dev/null 2>&1; then
+          if npm view agent-chrome-mcp-shared@$(node -p "require('./packages/shared/package.json').version") version --registry=https://registry.npmjs.org >/dev/null 2>&1; then
             echo "shared_exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "shared_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if npm view agent-chrome-mcp@$(node -p "require('./app/native-server/package.json').version") version >/dev/null 2>&1; then
+          if npm view agent-chrome-mcp@$(node -p "require('./app/native-server/package.json').version") version --registry=https://registry.npmjs.org >/dev/null 2>&1; then
             echo "native_exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "native_exists=false" >> "$GITHUB_OUTPUT"
@@ -85,11 +85,13 @@ jobs:
 
       - name: Configure npm auth
         if: steps.npm_packages.outputs.shared_exists != 'true' || steps.npm_packages.outputs.native_exists != 'true'
-        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+        run: |
+          npm config set registry https://registry.npmjs.org
+          npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
 
       - name: Publish shared package to npm
         if: steps.npm_packages.outputs.shared_exists != 'true'
-        run: pnpm --filter agent-chrome-mcp-shared publish --access public --no-git-checks
+        run: pnpm --filter agent-chrome-mcp-shared publish --access public --no-git-checks --registry=https://registry.npmjs.org
 
       - name: Prepare native package metadata for npm
         run: |
@@ -102,7 +104,7 @@ jobs:
           fs.writeFileSync(nativePath, `${JSON.stringify(native, null, 2)}\n`);
           NODE
 
-      - name: Pack native bridge and verify npx entry
+      - name: Pack native bridge and verify package entry
         run: |
           set -euo pipefail
           mkdir -p release-artifacts/npm-pack
@@ -124,7 +126,7 @@ jobs:
 
       - name: Publish native bridge to npm
         if: steps.npm_packages.outputs.native_exists != 'true'
-        run: pnpm --filter agent-chrome-mcp publish --access public --no-git-checks
+        run: pnpm --filter agent-chrome-mcp publish --access public --no-git-checks --registry=https://registry.npmjs.org
 
       - name: Prepare release assets
         run: |
@@ -172,8 +174,39 @@ jobs:
             2. Open `chrome://extensions/` in Chrome.
             3. Enable Developer mode.
             4. Click Load unpacked and select the unzipped folder that contains `manifest.json`.
-            5. Open the Agent Chrome MCP extension popup and click Copy Configuration.
-            6. Paste this config into your agent MCP settings, then restart the agent:
+            5. Ask your agent to connect Agent Chrome MCP with this prompt:
+
+            ```text
+            Connect Agent Chrome MCP to this agent.
+
+            Requirements:
+            - Use the simple npx config first.
+            - If this agent cannot start MCP stdio through npx, falls back to the direct Node.js config below.
+
+            Primary MCP server config:
+
+            {
+              "mcpServers": {
+                "agent-chrome-mcp": {
+                  "command": "npx",
+                  "args": ["-y", "--registry=https://registry.npmjs.org", "agent-chrome-mcp@latest", "stdio"]
+                }
+              }
+            }
+
+            If prerequisites, extension loading, or fallback setup are missing, follow the manual install guide first:
+            https://github.com/rudy2steiner/agent-chrome-agent#-quick-start
+
+            Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
+            1. Run npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
+            2. Resolve node path with: node -p "process.execPath"
+            3. Resolve global npm root with: npm root -g
+            4. Configure command as the absolute node path and args as:
+               <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
+            5. Add env CHROME_MCP_SKIP_AUTO_REGISTER=1.
+            ```
+
+            6. Use this config shape, then restart the agent:
 
             ```json
             {
@@ -188,21 +221,35 @@ jobs:
 
             7. After the agent restarts, open the extension popup and click Connect.
 
-            Advanced global install:
-
-            ```bash
-            npm install -g agent-chrome-mcp
-            ```
+            Direct Node.js fallback if npx hangs:
 
             ```json
             {
               "mcpServers": {
                 "agent-chrome-mcp": {
-                  "command": "agent-chrome-mcp",
-                  "args": ["stdio"]
+                  "command": "<absolute node path>",
+                  "args": ["<npm root -g>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js"],
+                  "env": {
+                    "CHROME_MCP_SKIP_AUTO_REGISTER": "1"
+                  }
                 }
               }
             }
             ```
 
-            Advanced HTTP endpoint: `http://127.0.0.1:12307/mcp` after the extension starts the local bridge.
+            Advanced Streamable HTTP config after the extension starts the local bridge:
+
+            ```json
+            {
+              "mcpServers": {
+                "agent-chrome-mcp-http": {
+                  "type": "streamableHttp",
+                  "url": "http://127.0.0.1:12307/mcp"
+                }
+              }
+            }
+            ```
+
+            If your client expects kebab-case, use `"type": "streamable-http"`.
+
+            Do not open `http://127.0.0.1:12307/mcp` directly in a browser tab; add it as an MCP server in your agent.

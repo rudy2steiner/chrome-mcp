@@ -90,7 +90,7 @@
     "description": "MCP 서버 설정 섹션 레이블"
   },
   "mcpConfigHelpText": {
-    "message": "Copy this into your agent MCP settings. The agent starts the bridge automatically.",
+    "message": "Copy this into your agent MCP settings. Use direct Node.js only if npx hangs.",
     "description": "Short setup instruction for generated MCP config"
   },
   "connectionPortLabel": {

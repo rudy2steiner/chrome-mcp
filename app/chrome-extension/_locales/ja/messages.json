@@ -69,7 +69,7 @@
     "message": "MCPサーバー設定"
   },
   "mcpConfigHelpText": {
-    "message": "Agent の MCP 設定にコピーしてください。Agent がブリッジを自動起動します。"
+    "message": "Agent の MCP 設定にコピーしてください。npx が停止する場合のみ直接 Node.js を使用してください。"
   },
   "connectionPortLabel": {
     "message": "接続ポート"
