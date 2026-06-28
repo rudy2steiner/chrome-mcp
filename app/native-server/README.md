@@ -1,6 +1,6 @@
 # Agent Chrome MCP
 
-**📖 Documentation**: [English](https://github.com/rudy2steiner/agent-chrome-agent/blob/master/app/native-server/README.md) | [中文](https://github.com/rudy2steiner/agent-chrome-agent/blob/master/app/native-server/README_zh.md)
+**📖 Documentation**: [English](https://github.com/rudy2steiner/agent-chrome-mcp/blob/master/app/native-server/README.md) | [中文](https://github.com/rudy2steiner/agent-chrome-mcp/blob/master/app/native-server/README_zh.md)
 
 Use your own Chrome browser as an MCP server for work automation agents and MCP-compatible clients.
 
@@ -20,7 +20,7 @@ Most users should let their agent configure this package with the `npx` MCP conf
 ### 1. Install The Chrome Extension
 
 1. Download the latest `agent-chrome-mcp-extension.zip` from:
-   https://github.com/rudy2steiner/agent-chrome-agent/releases/latest
+   https://github.com/rudy2steiner/agent-chrome-mcp/releases/latest
 2. Unzip it.
 3. Open Chrome and go to `chrome://extensions/`.
 4. Enable Developer mode.
@@ -50,7 +50,7 @@ Primary MCP server config:
 }
 
 If prerequisites, extension loading, or fallback setup are missing, follow the manual install guide first:
-https://github.com/rudy2steiner/agent-chrome-agent#-quick-start
+https://github.com/rudy2steiner/agent-chrome-mcp#-quick-start
 
 Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
 1. Run npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
@@ -60,7 +60,7 @@ Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
    <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
 5. Add env CHROME_MCP_SKIP_AUTO_REGISTER=1.
 
-After updating the MCP config, tell me where you saved it and which config style you used. Remind me to restart the agent, confirm the Chrome extension is loaded from https://github.com/rudy2steiner/agent-chrome-agent/releases/latest if needed, and click Connect in the extension popup.
+After updating the MCP config, tell me where you saved it and which config style you used. Remind me to restart the agent, confirm the Chrome extension is loaded from https://github.com/rudy2steiner/agent-chrome-mcp/releases/latest if needed, and click Connect in the extension popup.
 ```
 
 ### 3. Restart And Connect

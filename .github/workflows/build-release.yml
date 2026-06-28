@@ -195,7 +195,7 @@ jobs:
             }
 
             If prerequisites, extension loading, or fallback setup are missing, follow the manual install guide first:
-            https://github.com/rudy2steiner/agent-chrome-agent#-quick-start
+            https://github.com/rudy2steiner/agent-chrome-mcp#-quick-start
 
             Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
             1. Run npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest

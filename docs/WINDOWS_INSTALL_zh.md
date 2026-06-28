@@ -14,7 +14,7 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
 ## 📋 安装
 
 1. **下载最新版本**
-   - 从 https://github.com/rudy2steiner/agent-chrome-agent/releases/latest 下载 `agent-chrome-mcp-extension.zip`
+   - 从 https://github.com/rudy2steiner/agent-chrome-mcp/releases/latest 下载 `agent-chrome-mcp-extension.zip`
    - 解压 zip 文件
 
 2. **加载 Chrome 扩展**
@@ -49,7 +49,7 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
 }
 
 如果缺少环境要求、扩展加载或回退配置，请先按手动安装指南操作：
-https://github.com/rudy2steiner/agent-chrome-agent#-快速开始
+https://github.com/rudy2steiner/agent-chrome-mcp#-快速开始
 
 如果按手动指南操作后 npx 仍卡住，或者 Agent 无法列出 MCP tools：
 1. 运行 npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
@@ -59,7 +59,7 @@ https://github.com/rudy2steiner/agent-chrome-agent#-快速开始
    <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
 5. 添加环境变量 CHROME_MCP_SKIP_AUTO_REGISTER=1。
 
-更新 MCP 配置后告诉我保存到了哪里，以及使用的是哪种配置方式。提醒我重启 Agent，必要时确认已从 https://github.com/rudy2steiner/agent-chrome-agent/releases/latest 加载 Chrome 扩展，并在扩展弹窗里点击"连接"。
+更新 MCP 配置后告诉我保存到了哪里，以及使用的是哪种配置方式。提醒我重启 Agent，必要时确认已从 https://github.com/rudy2steiner/agent-chrome-mcp/releases/latest 加载 Chrome 扩展，并在扩展弹窗里点击"连接"。
 ```
 
 4. **重启并连接**

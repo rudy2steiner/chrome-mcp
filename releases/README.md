@@ -6,7 +6,7 @@
 
 Download the latest `agent-chrome-mcp-extension.zip` from:
 
-https://github.com/rudy2steiner/agent-chrome-agent/releases/latest
+https://github.com/rudy2steiner/agent-chrome-mcp/releases/latest
 
 ## Install
 
@@ -47,7 +47,7 @@ Primary MCP server config:
 }
 
 If prerequisites, extension loading, or fallback setup are missing, follow the manual install guide first:
-https://github.com/rudy2steiner/agent-chrome-agent#-quick-start
+https://github.com/rudy2steiner/agent-chrome-mcp#-quick-start
 
 Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
 1. Run npm install -g --registry=https://registry.npmjs.org agent-chrome-mcp@latest
@@ -57,7 +57,7 @@ Fallback if npx hangs or the agent cannot list MCP tools after the manual guide:
    <global npm root>/agent-chrome-mcp/dist/mcp/mcp-server-stdio.js
 5. Add env CHROME_MCP_SKIP_AUTO_REGISTER=1.
 
-After updating the MCP config, tell me where you saved it and which config style you used. Remind me to restart the agent, confirm the Chrome extension is loaded from https://github.com/rudy2steiner/agent-chrome-agent/releases/latest if needed, and click Connect in the extension popup.
+After updating the MCP config, tell me where you saved it and which config style you used. Remind me to restart the agent, confirm the Chrome extension is loaded from https://github.com/rudy2steiner/agent-chrome-mcp/releases/latest if needed, and click Connect in the extension popup.
 ```
 
 Then restart the agent and click Connect in the extension popup.
