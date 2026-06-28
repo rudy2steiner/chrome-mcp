@@ -35,7 +35,10 @@ jobs:
           corepack prepare pnpm@9.15.9 --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Prepare Chrome extension
+        run: pnpm --filter agent-chrome-mcp-extension exec wxt prepare
 
       - name: Verify npm publishing token
         run: |
