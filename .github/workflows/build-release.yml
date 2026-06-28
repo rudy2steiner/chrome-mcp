@@ -40,13 +40,6 @@ jobs:
       - name: Prepare Chrome extension
         run: pnpm --filter agent-chrome-mcp-extension exec wxt prepare
 
-      - name: Verify npm publishing token
-        run: |
-          if [ -z "${NPM_TOKEN}" ]; then
-            echo "NPM_TOKEN is required so agent-chrome-mcp can be published before the GitHub release is created." >&2
-            exit 1
-          fi
-
       - name: Build shared package
         run: pnpm --filter agent-chrome-mcp-shared build
 
@@ -65,9 +58,6 @@ jobs:
       - name: Zip Chrome extension
         run: pnpm --filter agent-chrome-mcp-extension zip
 
-      - name: Configure npm auth
-        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
-
       - name: Check npm package availability
         id: npm_packages
         run: |
@@ -82,6 +72,20 @@ jobs:
           else
             echo "native_exists=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Verify npm publishing token
+        if: steps.npm_packages.outputs.shared_exists != 'true' || steps.npm_packages.outputs.native_exists != 'true'
+        run: |
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "NPM_TOKEN is required because at least one npm package version is not published yet." >&2
+            echo "Add it in GitHub: Settings > Secrets and variables > Actions > New repository secret." >&2
+            echo "Required secret name: NPM_TOKEN" >&2
+            exit 1
+          fi
+
+      - name: Configure npm auth
+        if: steps.npm_packages.outputs.shared_exists != 'true' || steps.npm_packages.outputs.native_exists != 'true'
+        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
 
       - name: Publish shared package to npm
         if: steps.npm_packages.outputs.shared_exists != 'true'
