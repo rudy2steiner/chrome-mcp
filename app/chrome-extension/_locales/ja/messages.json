@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Agent Agent Chrome MCP"
+    "message": "Agent Chrome MCP"
   },
   "extensionDescription": {
     "message": "自身のChromeブラウザの機能を外部に公開します"
@@ -67,6 +67,9 @@
   },
   "mcpServerConfigLabel": {
     "message": "MCPサーバー設定"
+  },
+  "mcpConfigHelpText": {
+    "message": "Agent の MCP 設定にコピーしてください。Agent がブリッジを自動起動します。"
   },
   "connectionPortLabel": {
     "message": "接続ポート"

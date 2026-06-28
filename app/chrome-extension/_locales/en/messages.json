@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Agent Agent Chrome MCP",
+    "message": "Agent Chrome MCP",
     "description": "Extension name"
   },
   "extensionDescription": {
@@ -88,6 +88,10 @@
   "mcpServerConfigLabel": {
     "message": "MCP Server Configuration",
     "description": "MCP server configuration section label"
+  },
+  "mcpConfigHelpText": {
+    "message": "Copy this into your agent MCP settings. The agent starts the bridge automatically.",
+    "description": "Short setup instruction for generated MCP config"
   },
   "connectionPortLabel": {
     "message": "Connection Port",

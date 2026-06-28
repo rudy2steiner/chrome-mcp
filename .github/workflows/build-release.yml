@@ -28,7 +28,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
-          cache: pnpm
 
       - name: Setup pnpm
         run: |
@@ -66,7 +65,23 @@ jobs:
       - name: Configure npm auth
         run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
 
+      - name: Check npm package availability
+        id: npm_packages
+        run: |
+          if npm view agent-chrome-mcp-shared@$(node -p "require('./packages/shared/package.json').version") version >/dev/null 2>&1; then
+            echo "shared_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "shared_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if npm view agent-chrome-mcp@$(node -p "require('./app/native-server/package.json').version") version >/dev/null 2>&1; then
+            echo "native_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "native_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish shared package to npm
+        if: steps.npm_packages.outputs.shared_exists != 'true'
         run: pnpm --filter agent-chrome-mcp-shared publish --access public --no-git-checks
 
       - name: Prepare native package metadata for npm
@@ -80,7 +95,28 @@ jobs:
           fs.writeFileSync(nativePath, `${JSON.stringify(native, null, 2)}\n`);
           NODE
 
+      - name: Pack native bridge and verify npx entry
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts/npm-pack
+          pnpm --dir app/native-server pack --pack-destination "$PWD/release-artifacts/npm-pack"
+          TARBALL="$(find release-artifacts/npm-pack -maxdepth 1 -name 'agent-chrome-mcp-*.tgz' -print -quit)"
+          tar -xOf "${TARBALL}" package/package.json > release-artifacts/npm-pack/native-package.json
+          node <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('release-artifacts/npm-pack/native-package.json', 'utf8'));
+          const shared = pkg.dependencies?.['agent-chrome-mcp-shared'];
+          if (!shared || shared.startsWith('workspace:')) {
+            throw new Error(`Packed native package has invalid shared dependency: ${shared}`);
+          }
+          if (!pkg.bin?.['agent-chrome-mcp']) {
+            throw new Error('Packed native package is missing the agent-chrome-mcp bin');
+          }
+          console.log(`Packed ${pkg.name}@${pkg.version} depends on agent-chrome-mcp-shared@${shared}`);
+          NODE
+
       - name: Publish native bridge to npm
+        if: steps.npm_packages.outputs.native_exists != 'true'
         run: pnpm --filter agent-chrome-mcp publish --access public --no-git-checks
 
       - name: Prepare release assets
@@ -98,7 +134,7 @@ jobs:
             "mcpServers": {
               "agent-chrome-mcp": {
                 "command": "npx",
-                "args": ["-y", "--package", "agent-chrome-mcp", "agent-chrome-mcp-stdio"]
+                "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
               }
             }
           }
@@ -128,21 +164,24 @@ jobs:
             1. Download `agent-chrome-mcp-extension.zip` from this release and unzip it.
             2. Open `chrome://extensions/` in Chrome.
             3. Enable Developer mode.
-            4. Click Load unpacked and select the unzipped extension folder.
-            5. Add Agent Chrome MCP to your MCP client with either:
+            4. Click Load unpacked and select the unzipped folder that contains `manifest.json`.
+            5. Open the Agent Chrome MCP extension popup and click Copy Configuration.
+            6. Paste this config into your agent MCP settings, then restart the agent:
 
             ```json
             {
               "mcpServers": {
                 "agent-chrome-mcp": {
                   "command": "npx",
-                  "args": ["-y", "--package", "agent-chrome-mcp", "agent-chrome-mcp-stdio"]
+                  "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
                 }
               }
             }
             ```
 
-            If you prefer a global install:
+            7. After the agent restarts, open the extension popup and click Connect.
+
+            Advanced global install:
 
             ```bash
             npm install -g agent-chrome-mcp
@@ -152,11 +191,11 @@ jobs:
             {
               "mcpServers": {
                 "agent-chrome-mcp": {
-                  "command": "agent-chrome-mcp-stdio",
-                  "args": []
+                  "command": "agent-chrome-mcp",
+                  "args": ["stdio"]
                 }
               }
             }
             ```
 
-            The HTTP endpoint is `http://127.0.0.1:12307/mcp` after the extension starts the local bridge.
+            Advanced HTTP endpoint: `http://127.0.0.1:12307/mcp` after the extension starts the local bridge.

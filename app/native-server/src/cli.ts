@@ -16,7 +16,14 @@ import { runReport } from './scripts/report';
 
 program
   .version(require('../package.json').version)
-  .description('Mcp Chrome Bridge - Local service for communicating with Chrome extension');
+  .description('Agent Chrome MCP - Local service for communicating with Chrome extension');
+
+program
+  .command('stdio')
+  .description('Start the MCP stdio bridge for agent clients')
+  .action(async () => {
+    await import('./mcp/mcp-server-stdio.js');
+  });
 
 // Register Native Messaging host
 program

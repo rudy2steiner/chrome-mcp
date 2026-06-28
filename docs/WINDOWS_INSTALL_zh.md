@@ -4,34 +4,37 @@ Agent Chrome MCP 在windows电脑的详细安装和配置步骤
 
 ## 📋 安装
 
-1. **从github上下载最新的chrome扩展**
+1. **下载最新版本**
+   - 从 https://github.com/rudy2steiner/chrome-mcp/releases/latest 下载 `agent-chrome-mcp-extension.zip`
+   - 解压 zip 文件
 
-下载地址：https://github.com/hangwin/mcp-chrome/releases
-
-2. **全局安装agent-chrome-mcp**
-
-确保电脑上已经安装了node，如果没安装请自行先安装
-
-```bash
-npm install -g agent-chrome-mcp
-```
-
-3. **加载 Chrome 扩展**
+2. **加载 Chrome 扩展**
    - 打开 Chrome 并访问 `chrome://extensions/`
    - 启用"开发者模式"
-   - 点击"加载已解压的扩展程序"，选择 `your/dowloaded/extension/folder`
-   - 点击插件图标打开插件，点击连接即可看到mcp的配置
+   - 点击"加载已解压的扩展程序"
+   - 选择包含 `manifest.json` 的解压目录
+   - 点击 Agent Chrome MCP 插件图标
+   - 点击"复制配置"
      <img width="475" alt="截屏2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
-4. **在 CherryStudio 中使用**
+3. **在 CherryStudio 或其他 Agent 中使用**
 
-类型选streamableHttp，url填http://127.0.0.1:12306/mcp
+推荐使用 stdio 配置。把下面配置粘贴到 Agent 的 MCP 设置里，然后重启 Agent：
 
-<img width="675" alt="截屏2025-06-11 15 00 29" src="https://github.com/user-attachments/assets/6631e9e4-57f9-477e-b708-6a285cc0d881" />
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+```
 
-查看工具列表，如果能列出工具，说明已经可以使用了
+Agent 重启后，打开插件弹窗并点击"连接"。查看工具列表，如果能列出工具，说明已经可以使用了。
 
-<img width="672" alt="截屏2025-06-11 15 14 55" src="https://github.com/user-attachments/assets/d08b7e51-3466-4ab7-87fa-3f1d7be9d112" />
+HTTP 方式只作为高级用法：扩展启动本地桥接后，端点是 `http://127.0.0.1:12307/mcp`。
 
 ```json
 {

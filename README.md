@@ -49,43 +49,42 @@ Agent Chrome MCP is a Chrome extension-based **Model Context Protocol (MCP) serv
 
 ### Prerequisites
 
-- Node.js >= 20.0.0 and pnpm/npm
 - Chrome/Chromium browser
+- An MCP-capable agent client such as Codex, Claude, Qoder, Cursor, or Cherry Studio
+
+The recommended setup uses `npx` so users do not need to run `npm install -g`.
 
 ### Installation Steps
 
-1. **Download the latest Chrome extension from GitHub**
+1. **Download the latest release**
+   - Download `agent-chrome-mcp-extension.zip` from https://github.com/rudy2steiner/chrome-mcp/releases/latest
+   - Unzip it.
 
-Download link: https://github.com/rudy2steiner/chrome-mcp/releases
-
-2. **Install agent-chrome-mcp globally**
-
-npm
-
-```bash
-npm install -g agent-chrome-mcp
-```
-
-pnpm
-
-```bash
-# Method 1: Enable scripts globally (recommended)
-pnpm config set enable-pre-post-scripts true
-pnpm install -g agent-chrome-mcp
-
-# Method 2: Manual registration (if postinstall doesn't run)
-pnpm install -g agent-chrome-mcp
-agent-chrome-mcp register
-```
-
-> Note: pnpm v7+ disables postinstall scripts by default for security. The `enable-pre-post-scripts` setting controls whether pre/post install scripts run. If automatic registration fails, use the manual registration command above.
-
-3. **Load Chrome Extension**
+2. **Load the Chrome extension**
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode"
-   - Click "Load unpacked" and select `your/dowloaded/extension/folder`
-   - Click the extension icon once. Agent Chrome MCP will start the local bridge automatically.
+   - Click "Load unpacked"
+   - Select the unzipped folder that contains `manifest.json`
+   - Click the Agent Chrome MCP extension icon
+   - Click "Copy Configuration"
      <img width="475" alt="Screenshot 2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
+
+3. **Add the MCP server to your agent**
+
+Paste the copied config into your agent MCP settings, then restart the agent:
+
+```json
+{
+  "mcpServers": {
+    "agent-chrome-mcp": {
+      "command": "npx",
+      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
+    }
+  }
+}
+```
+
+After the agent restarts, open the extension popup and click "Connect".
 
 ### Usage with MCP Protocol Clients
 
@@ -97,21 +96,21 @@ Add Agent Chrome MCP as a normal stdio MCP server. The stdio entry point perform
 {
   "mcpServers": {
     "agent-chrome-mcp": {
-      "command": "agent-chrome-mcp-stdio",
-      "args": []
+      "command": "npx",
+      "args": ["-y", "agent-chrome-mcp@latest", "stdio"]
     }
   }
 }
 ```
 
-If your MCP client cannot resolve global npm binaries, use `npx`:
+If you prefer a global install, run `npm install -g agent-chrome-mcp`, then use:
 
 ```json
 {
   "mcpServers": {
     "agent-chrome-mcp": {
-      "command": "npx",
-      "args": ["-y", "--package", "agent-chrome-mcp", "agent-chrome-mcp-stdio"]
+      "command": "agent-chrome-mcp",
+      "args": ["stdio"]
     }
   }
 }

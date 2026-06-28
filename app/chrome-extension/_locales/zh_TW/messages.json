@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Agent Agent Chrome MCP",
+    "message": "Agent Chrome MCP",
     "description": "擴充功能名稱"
   },
   "extensionDescription": {
@@ -88,6 +88,10 @@
   "mcpServerConfigLabel": {
     "message": "MCP 伺服器設定",
     "description": "MCP 伺服器設定區段標籤"
+  },
+  "mcpConfigHelpText": {
+    "message": "複製到你的 Agent MCP 設定中，Agent 會自動啟動橋接服務。",
+    "description": "產生的 MCP 設定的簡短設定說明"
   },
   "connectionPortLabel": {
     "message": "連結埠",

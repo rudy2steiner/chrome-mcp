@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Agent Agent Chrome MCP",
+    "message": "Agent Chrome MCP",
     "description": "扩展名称"
   },
   "extensionDescription": {
@@ -88,6 +88,10 @@
   "mcpServerConfigLabel": {
     "message": "MCP 服务器配置",
     "description": "MCP 服务器配置节标签"
+  },
+  "mcpConfigHelpText": {
+    "message": "复制到你的 Agent MCP 设置中，Agent 会自动启动桥接服务。",
+    "description": "生成的 MCP 配置的简短设置说明"
   },
   "connectionPortLabel": {
     "message": "连接端口",

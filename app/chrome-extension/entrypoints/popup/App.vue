@@ -12,6 +12,19 @@
         <div class="section">
           <h2 class="section-title">{{ getMessage('nativeServerConfigLabel') }}</h2>
           <div class="config-card">
+            <div class="mcp-config-section">
+              <div class="mcp-config-header">
+                <p class="mcp-config-label">{{ getMessage('mcpServerConfigLabel') }}</p>
+                <button class="copy-config-button" @click="copyMcpConfig">
+                  {{ copyButtonText }}
+                </button>
+              </div>
+              <p class="mcp-config-help">{{ getMessage('mcpConfigHelpText') }}</p>
+              <div class="mcp-config-content">
+                <pre class="mcp-config-json">{{ mcpConfigJson }}</pre>
+              </div>
+            </div>
+
             <div class="status-section">
               <div class="status-header">
                 <p class="status-label">{{ getMessage('runningStatusLabel') }}</p>
@@ -33,18 +46,15 @@
               </div>
             </div>
 
-            <div v-if="showMcpConfig" class="mcp-config-section">
-              <div class="mcp-config-header">
-                <p class="mcp-config-label">{{ getMessage('mcpServerConfigLabel') }}</p>
-                <button class="copy-config-button" @click="copyMcpConfig">
-                  {{ copyButtonText }}
-                </button>
-              </div>
-              <div class="mcp-config-content">
-                <pre class="mcp-config-json">{{ mcpConfigJson }}</pre>
-              </div>
-            </div>
-            <div class="port-section">
+            <button
+              class="advanced-toggle-button"
+              @click="showAdvancedConfig = !showAdvancedConfig"
+            >
+              <span>{{ getMessage('advancedSettingsLabel') }}</span>
+              <span aria-hidden="true">{{ showAdvancedConfig ? '−' : '+' }}</span>
+            </button>
+
+            <div v-if="showAdvancedConfig" class="port-section">
               <label for="port" class="port-label">{{ getMessage('connectionPortLabel') }}</label>
               <input
                 type="text"
@@ -516,6 +526,7 @@ const runFlow = async (flowId: string) => {
 const nativeConnectionStatus = ref<'unknown' | 'connected' | 'disconnected'>('unknown');
 const isConnecting = ref(false);
 const nativeServerPort = ref<number>(NATIVE_HOST.DEFAULT_PORT);
+const showAdvancedConfig = ref(false);
 
 const serverStatus = ref<{
   isRunning: boolean;
@@ -526,19 +537,14 @@ const serverStatus = ref<{
   lastUpdated: Date.now(),
 });
 
-const showMcpConfig = computed(() => {
-  return nativeConnectionStatus.value === 'connected' && serverStatus.value.isRunning;
-});
-
 const copyButtonText = ref(getMessage('copyConfigButton'));
 
 const mcpConfigJson = computed(() => {
-  const port = serverStatus.value.port || nativeServerPort.value;
   const config = {
     mcpServers: {
       'agent-chrome-mcp': {
-        type: 'streamable-http',
-        url: `http://127.0.0.1:${port}/mcp`,
+        command: 'npx',
+        args: ['-y', 'agent-chrome-mcp@latest', 'stdio'],
       },
     },
   };
@@ -1065,14 +1071,14 @@ const refreshServerStatus = async () => {
 const copyMcpConfig = async () => {
   try {
     await navigator.clipboard.writeText(mcpConfigJson.value);
-    copyButtonText.value = '✅' + getMessage('configCopiedNotification');
+    copyButtonText.value = getMessage('configCopiedNotification');
 
     setTimeout(() => {
       copyButtonText.value = getMessage('copyConfigButton');
     }, 2000);
   } catch (error) {
     console.error('复制配置失败:', error);
-    copyButtonText.value = '❌' + getMessage('networkErrorMessage');
+    copyButtonText.value = getMessage('networkErrorMessage');
 
     setTimeout(() => {
       copyButtonText.value = getMessage('copyConfigButton');
@@ -2034,7 +2040,8 @@ onUnmounted(() => {
 }
 
 .mcp-config-section {
-  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 14px;
 }
 
 .mcp-config-header {
@@ -2049,6 +2056,13 @@ onUnmounted(() => {
   font-weight: 500;
   color: #64748b;
   margin: 0;
+}
+
+.mcp-config-help {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+  margin: 0 0 8px;
 }
 
 .copy-config-button {
@@ -2115,6 +2129,25 @@ onUnmounted(() => {
   outline: none;
   border-color: var(--ac-accent, #d97757);
   box-shadow: 0 0 0 3px var(--ac-accent-subtle, rgba(217, 119, 87, 0.12));
+}
+
+.advanced-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.advanced-toggle-button:hover {
+  background: #f1f5f9;
 }
 
 .connect-button {

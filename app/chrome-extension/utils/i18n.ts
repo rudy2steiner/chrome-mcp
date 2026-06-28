@@ -37,6 +37,8 @@ const fallbackMessages: Record<string, string> = {
 
   // Configuration labels
   mcpServerConfigLabel: 'MCP Server Configuration',
+  mcpConfigHelpText:
+    'Copy this into your agent MCP settings. The agent starts the bridge automatically.',
   connectionPortLabel: 'Connection Port',
   refreshStatusButton: 'Refresh Status',
   copyConfigButton: 'Copy Configuration',
