@@ -95,8 +95,15 @@ jobs:
       - name: Configure npm auth
         if: steps.npm_packages.outputs.shared_exists != 'true' || steps.npm_packages.outputs.native_exists != 'true'
         run: |
-          npm config set registry https://registry.npmjs.org
-          npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          # Write after upgrading the npm CLI so auth lands in the active config.
+          # NODE_AUTH_TOKEN is also exported for npm's standard CI lookup.
+          {
+            echo "registry=https://registry.npmjs.org"
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
+            echo "always-auth=true"
+          } > "${HOME}/.npmrc"
+          echo "NODE_AUTH_TOKEN=${NPM_TOKEN}" >> "$GITHUB_ENV"
+          npm whoami --registry=https://registry.npmjs.org
 
       # NPM_TOKEN is stage-only: it cannot `npm publish` new versions.
       # Stage first; a maintainer with 2FA must later run `npm stage approve <id> --otp ...`.
