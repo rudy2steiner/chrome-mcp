@@ -7,6 +7,7 @@ import {
 import nativeMessagingHostInstance from '../native-messaging-host';
 import { NativeMessageType, TOOL_SCHEMAS } from 'agent-chrome-mcp-shared';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { coerceToolArguments } from './coerce-tool-args';
 
 async function listDynamicFlowTools(): Promise<Tool[]> {
   try {
@@ -117,11 +118,26 @@ const handleToolCall = async (name: string, args: any): Promise<CallToolResult> 
         };
       }
     }
+    let coercedArgs = args;
+    try {
+      coercedArgs = coerceToolArguments(name, args || {}, TOOL_SCHEMAS as any);
+    } catch (coerceError: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Invalid tool arguments: ${coerceError?.message || String(coerceError)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
     // 发送请求到Chrome扩展并等待响应
     const response = await nativeMessagingHostInstance.sendRequestToExtensionAndWait(
       {
         name,
-        args,
+        args: coercedArgs,
       },
       NativeMessageType.CALL_TOOL,
       120000, // 延长到 120 秒，避免性能分析等长任务超时

@@ -1244,13 +1244,16 @@ class GifRecorderTool extends BaseBrowserToolExecutor {
     );
   }
 
-  private async resolveTargetTab(tabId?: number): Promise<chrome.tabs.Tab | null> {
-    if (typeof tabId === 'number') {
-      return this.tryGetTab(tabId);
-    }
+  private async resolveTargetTab(tabId?: unknown): Promise<chrome.tabs.Tab | null> {
     try {
-      return await this.getActiveTabOrThrow();
-    } catch {
+      const { tab } = await super.resolveTargetTab({ tabId });
+      return tab;
+    } catch (error) {
+      // Preserve prior null-return contract for optional internal lookups,
+      // but never silently ignore an explicit invalid/missing tabId.
+      if (tabId !== undefined && tabId !== null && tabId !== '') {
+        throw error;
+      }
       return null;
     }
   }

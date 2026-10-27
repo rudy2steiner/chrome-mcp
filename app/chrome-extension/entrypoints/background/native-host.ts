@@ -359,6 +359,7 @@ export function connectNativeHost(port: number = NATIVE_HOST.DEFAULT_PORT): bool
       if (message.type === NativeMessageType.PROCESS_DATA && message.requestId) {
         const requestId = message.requestId;
         const requestPayload = message.payload;
+        const extensionVersion = chrome.runtime.getManifest()?.version || null;
 
         nativePort?.postMessage({
           responseToRequestId: requestId,
@@ -366,6 +367,8 @@ export function connectNativeHost(port: number = NATIVE_HOST.DEFAULT_PORT): bool
             status: 'success',
             message: SUCCESS_MESSAGES.TOOL_EXECUTED,
             data: requestPayload,
+            extensionVersion,
+            version: extensionVersion,
           },
         });
       } else if (message.type === NativeMessageType.CALL_TOOL && message.requestId) {

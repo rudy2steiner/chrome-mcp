@@ -11,12 +11,22 @@ class WindowTool extends BaseBrowserToolExecutor {
       const mcpGroup = await findMcpTabGroup();
       let tabCount = 0;
 
+      // Last-focused window + its active tab = silent fallback target when tools omit tabId.
+      const [fallbackActive] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const lastFocusedWindowId =
+        typeof fallbackActive?.windowId === 'number' ? fallbackActive.windowId : null;
+      const lastFocusedActiveTabId =
+        typeof fallbackActive?.id === 'number' ? fallbackActive.id : null;
+
       const structuredWindows = windows.map((window) => {
+        const isLastFocused = typeof window.id === 'number' && window.id === lastFocusedWindowId;
         const tabs =
           window.tabs?.map((tab) => {
             tabCount++;
             const inMcpGroup =
               mcpGroup != null && typeof tab.groupId === 'number' && tab.groupId === mcpGroup.id;
+            const isFallbackTarget =
+              isLastFocused && typeof tab.id === 'number' && tab.id === lastFocusedActiveTabId;
             return {
               tabId: tab.id || 0,
               url: tab.url || '',
@@ -24,11 +34,14 @@ class WindowTool extends BaseBrowserToolExecutor {
               active: tab.active || false,
               groupId: typeof tab.groupId === 'number' && tab.groupId >= 0 ? tab.groupId : null,
               mcpGroup: inMcpGroup,
+              isLastFocusedWindowActiveTab: isFallbackTarget,
             };
           }) || [];
 
         return {
           windowId: window.id || 0,
+          focused: window.focused === true,
+          isLastFocused,
           tabs: tabs,
         };
       });
@@ -36,6 +49,13 @@ class WindowTool extends BaseBrowserToolExecutor {
       const result = {
         windowCount: windows.length,
         tabCount: tabCount,
+        // When tools omit tabId, operations fall back to this target.
+        fallbackTarget: {
+          windowId: lastFocusedWindowId,
+          tabId: lastFocusedActiveTabId,
+          description:
+            'Last-focused window active tab. Tools that omit tabId operate here (fellBack:true).',
+        },
         mcpGroup: mcpGroup
           ? {
               groupId: mcpGroup.id,

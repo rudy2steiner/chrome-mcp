@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.37]
+
+### Fixed
+
+- Coerce MCP tool arguments by schema at the native server boundary so stringified `tabId` / numbers / booleans from clients no longer silently miss the target tab.
+- Explicit `tabId` resolution now hard-fails (no silent fallback to the last-focused window active tab).
+- Tool responses include `requestedTabId` / `resolvedTabId` / `fellBack` (and `warnings` when falling back).
+- GET `/mcp` no longer pre-writes SSE headers (fixes `ERR_HTTP_HEADERS_SENT` and multi-GB stderr log growth); stderr log retention/size caps tightened.
+- `chrome_switch_tab` accepts `focusWindow:false` to activate a tab without stealing OS focus.
+
+### Added
+
+- `GET /health` returns server / schema / extension versions and a consistency flag.
+- `get_windows_and_tabs` annotates the last-focused fallback target used when `tabId` is omitted.
+
+### Changed
+
+- Bumped native bridge, Chrome extension, and shared package versions to `1.0.37`.
+
 ## [v1.0.36]
 
 ### Added

@@ -6,7 +6,7 @@
  */
 
 import { createErrorResponse, type ToolResult } from '@/common/tool-handler';
-import { BaseBrowserToolExecutor } from '../base-browser';
+import { BaseBrowserToolExecutor, type TabResolutionMeta } from '../base-browser';
 import { BACKGROUND_MESSAGE_TYPES, TOOL_MESSAGE_TYPES } from '@/common/message-types';
 import { ERROR_MESSAGES } from '@/common/constants';
 import {
@@ -187,11 +187,16 @@ class ElementPickerTool extends BaseBrowserToolExecutor {
     const sessionId = `ep_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     const deadlineTs = Date.now() + timeoutMs;
 
-    // Resolve tab
+    // Resolve tab (explicit tabId hard-fails; no silent active-tab fallback)
     let tab: chrome.tabs.Tab;
+    let tabMeta: TabResolutionMeta;
     try {
-      const explicit = await this.tryGetTab(args?.tabId);
-      tab = explicit || (await this.getActiveTabOrThrowInWindow(args?.windowId));
+      const resolved = await this.resolveTargetTab({
+        tabId: args?.tabId,
+        windowId: args?.windowId,
+      });
+      tab = resolved.tab;
+      tabMeta = resolved.meta;
     } catch (error) {
       return createErrorResponse(
         `${ERROR_MESSAGES.TAB_NOT_FOUND}: ${error instanceof Error ? error.message : String(error)}`,
@@ -531,7 +536,17 @@ class ElementPickerTool extends BaseBrowserToolExecutor {
 
       // Wait for result
       const result = await resultPromise;
-      return { content: [{ type: 'text', text: JSON.stringify(result) }], isError: false };
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              this.withTabMeta(result as unknown as Record<string, unknown>, tabMeta),
+            ),
+          },
+        ],
+        isError: false,
+      };
     } catch (error) {
       console.error('Error in element picker tool:', error);
       // Cleanup on error

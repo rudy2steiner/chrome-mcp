@@ -2,7 +2,9 @@
 
 # Configuration
 ENABLE_LOG_ROTATION="true"
-LOG_RETENTION_COUNT=5
+LOG_RETENTION_COUNT=3
+# Rotate/truncate a single stderr file once it exceeds this many bytes (50MB)
+LOG_MAX_BYTES=$((50 * 1024 * 1024))
 
 # Setup paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,11 +25,22 @@ if ! mkdir -p "${LOG_DIR}" 2>/dev/null; then
     mkdir -p "${LOG_DIR}" 2>/dev/null || true
 fi
 
-# Log rotation
+# Log rotation: keep newest N files; also drop oversized stderr logs (> LOG_MAX_BYTES)
 if [ "${ENABLE_LOG_ROTATION}" = "true" ]; then
     # Clean up old logs (both legacy _macos_ and new _unix_ naming)
     ls -tp "${LOG_DIR}/native_host_wrapper_"* 2>/dev/null | tail -n +$((LOG_RETENTION_COUNT + 1)) | xargs -I {} rm -- {}
     ls -tp "${LOG_DIR}/native_host_stderr_"* 2>/dev/null | tail -n +$((LOG_RETENTION_COUNT + 1)) | xargs -I {} rm -- {}
+
+    # Size-cap: rename oversized stderr logs so a fresh file is used this run
+    for f in "${LOG_DIR}"/native_host_stderr_*; do
+        [ -f "$f" ] || continue
+        size=$(wc -c < "$f" 2>/dev/null | tr -d ' ')
+        if [ -n "${size}" ] && [ "${size}" -gt "${LOG_MAX_BYTES}" ]; then
+            mv "$f" "${f}.oversized.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || rm -f "$f"
+        fi
+    done
+    # Keep only newest oversized backups within retention
+    ls -tp "${LOG_DIR}/native_host_stderr_"*.oversized.* 2>/dev/null | tail -n +$((LOG_RETENTION_COUNT + 1)) | xargs -I {} rm -- {}
 fi
 
 # Logging setup
