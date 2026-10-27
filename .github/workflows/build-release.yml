@@ -126,6 +126,7 @@ jobs:
       - name: Stage shared package on npm
         id: stage_shared
         if: steps.npm_packages.outputs.shared_exists != 'true'
+        continue-on-error: true
         working-directory: packages/shared
         run: |
           set -euo pipefail
@@ -184,15 +185,21 @@ jobs:
       - name: Stage native bridge on npm
         id: stage_native
         if: steps.npm_packages.outputs.native_exists != 'true'
+        continue-on-error: true
         working-directory: app/native-server
         run: |
           set -euo pipefail
+          {
+            echo "registry=https://registry.npmjs.org"
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
+          } > .npmrc
           VERSION="$(node -p "require('./package.json').version")"
           echo "Staging agent-chrome-mcp@${VERSION} (not live until approved)"
           set +e
           OUTPUT="$(npm stage publish --access public --registry=https://registry.npmjs.org 2>&1)"
           STATUS=$?
           set -e
+          rm -f .npmrc
           echo "$OUTPUT"
           if [ "$STATUS" -ne 0 ]; then
             if echo "$OUTPUT" | grep -Eqi 'already staged|E409|conflict|exists'; then
@@ -256,3 +263,15 @@ jobs:
             ```
 
             Docs: https://docs.npmjs.com/staged-publishing/
+
+      - name: Fail if npm staging was required and failed
+        if: |
+          (steps.npm_packages.outputs.shared_exists != 'true' && steps.stage_shared.outcome == 'failure') ||
+          (steps.npm_packages.outputs.native_exists != 'true' && steps.stage_native.outcome == 'failure')
+        run: |
+          echo "::error::npm stage publish failed (often E401 = invalid/expired NPM_TOKEN)."
+          echo "1) Create a granular token with Read and write (stage only) for agent-chrome-mcp* packages."
+          echo "2) Update GitHub secret NPM_TOKEN."
+          echo "3) Re-run this workflow, then approve with: npm stage approve <id> --otp <otp>"
+          echo "Docs: https://docs.npmjs.com/staged-publishing/"
+          exit 1
