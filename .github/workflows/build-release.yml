@@ -40,13 +40,20 @@ jobs:
           npm install -g npm@11.15.0
           npm --version
           npm stage --help >/dev/null
-          # setup-node sets NPM_CONFIG_USERCONFIG to a temp .npmrc with ${NODE_AUTH_TOKEN}.
-          # Re-write both that file and ~/.npmrc after upgrading the global CLI.
-          AUTH_RC=$'registry=https://registry.npmjs.org\n//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n'
-          printf '%s' "${AUTH_RC}" > "${HOME}/.npmrc"
+          # Expand the token into npmrc (do not leave ${NODE_AUTH_TOKEN} unevaluated).
+          write_npmrc() {
+            local target="$1"
+            {
+              echo "registry=https://registry.npmjs.org"
+              echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
+            } > "${target}"
+          }
+          write_npmrc "${HOME}/.npmrc"
           if [ -n "${NPM_CONFIG_USERCONFIG:-}" ]; then
-            printf '%s' "${AUTH_RC}" > "${NPM_CONFIG_USERCONFIG}"
+            write_npmrc "${NPM_CONFIG_USERCONFIG}"
           fi
+          npm config set registry https://registry.npmjs.org
+          npm config set "//registry.npmjs.org/:_authToken" "${NODE_AUTH_TOKEN}"
 
       - name: Setup pnpm
         run: |
@@ -110,9 +117,8 @@ jobs:
             echo "NODE_AUTH_TOKEN / NPM_TOKEN is empty" >&2
             exit 1
           fi
-          # Do not call `npm whoami` — stage-only tokens may reject identity endpoints.
-          test -f "${HOME}/.npmrc"
-          grep -q '_authToken=' "${HOME}/.npmrc"
+          # Do not call `npm whoami` — stage-only tokens can 401 on identity endpoints.
+          echo "npm auth env present (stage-only token; skipping whoami)"
 
       # NPM_TOKEN is stage-only: it cannot `npm publish` new versions.
       # Stage first; a maintainer with 2FA must later run `npm stage approve <id> --otp ...`.
@@ -123,12 +129,17 @@ jobs:
         working-directory: packages/shared
         run: |
           set -euo pipefail
+          {
+            echo "registry=https://registry.npmjs.org"
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
+          } > .npmrc
           VERSION="$(node -p "require('./package.json').version")"
           echo "Staging agent-chrome-mcp-shared@${VERSION} (not live until approved)"
           set +e
           OUTPUT="$(npm stage publish --access public --registry=https://registry.npmjs.org 2>&1)"
           STATUS=$?
           set -e
+          rm -f .npmrc
           echo "$OUTPUT"
           if [ "$STATUS" -ne 0 ]; then
             if echo "$OUTPUT" | grep -Eqi 'already staged|E409|conflict|exists'; then
