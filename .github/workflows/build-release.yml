@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # setup-node registry-url + npm CLI both honor this for publish/stage.
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -28,6 +30,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: true
 
       # Stage-only NPM_TOKEN requires `npm stage publish` (CLI >= 11.15.0).
       # Node 24's bundled npm may be older; pin a known-good CLI for staging.
@@ -36,6 +40,12 @@ jobs:
           npm install -g npm@11.15.0
           npm --version
           npm stage --help >/dev/null
+          # Re-assert auth after global npm upgrade (setup-node wrote the project .npmrc).
+          {
+            echo "registry=https://registry.npmjs.org"
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
+          } > "${HOME}/.npmrc"
+          cp "${HOME}/.npmrc" .npmrc
 
       - name: Setup pnpm
         run: |
