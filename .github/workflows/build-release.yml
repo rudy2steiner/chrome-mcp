@@ -40,12 +40,13 @@ jobs:
           npm install -g npm@11.15.0
           npm --version
           npm stage --help >/dev/null
-          # Re-assert auth after global npm upgrade (setup-node wrote the project .npmrc).
-          {
-            echo "registry=https://registry.npmjs.org"
-            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
-          } > "${HOME}/.npmrc"
-          cp "${HOME}/.npmrc" .npmrc
+          # setup-node sets NPM_CONFIG_USERCONFIG to a temp .npmrc with ${NODE_AUTH_TOKEN}.
+          # Re-write both that file and ~/.npmrc after upgrading the global CLI.
+          AUTH_RC=$'registry=https://registry.npmjs.org\n//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n'
+          printf '%s' "${AUTH_RC}" > "${HOME}/.npmrc"
+          if [ -n "${NPM_CONFIG_USERCONFIG:-}" ]; then
+            printf '%s' "${AUTH_RC}" > "${NPM_CONFIG_USERCONFIG}"
+          fi
 
       - name: Setup pnpm
         run: |
@@ -102,18 +103,16 @@ jobs:
             exit 1
           fi
 
-      - name: Configure npm auth
+      - name: Verify npm auth config present
         if: steps.npm_packages.outputs.shared_exists != 'true' || steps.npm_packages.outputs.native_exists != 'true'
         run: |
-          # Write after upgrading the npm CLI so auth lands in the active config.
-          # NODE_AUTH_TOKEN is also exported for npm's standard CI lookup.
-          {
-            echo "registry=https://registry.npmjs.org"
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
-            echo "always-auth=true"
-          } > "${HOME}/.npmrc"
-          echo "NODE_AUTH_TOKEN=${NPM_TOKEN}" >> "$GITHUB_ENV"
-          npm whoami --registry=https://registry.npmjs.org
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "NODE_AUTH_TOKEN / NPM_TOKEN is empty" >&2
+            exit 1
+          fi
+          # Do not call `npm whoami` — stage-only tokens may reject identity endpoints.
+          test -f "${HOME}/.npmrc"
+          grep -q '_authToken=' "${HOME}/.npmrc"
 
       # NPM_TOKEN is stage-only: it cannot `npm publish` new versions.
       # Stage first; a maintainer with 2FA must later run `npm stage approve <id> --otp ...`.
