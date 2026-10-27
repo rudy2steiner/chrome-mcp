@@ -118,6 +118,46 @@ export class Server {
         message: 'pong',
       });
     });
+
+    this.fastify.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
+      const pkg = require('../../package.json') as { version?: string };
+      const serverVersion = pkg.version || 'unknown';
+      let extensionVersion: string | null = null;
+      let extensionConnected = false;
+
+      if (this.nativeHost) {
+        try {
+          const extensionResponse = (await this.nativeHost.sendRequestToExtensionAndWait(
+            {},
+            'process_data',
+            3000,
+          )) as { status?: string; extensionVersion?: string; version?: string };
+          extensionConnected = extensionResponse?.status === 'success';
+          extensionVersion =
+            extensionResponse?.extensionVersion || extensionResponse?.version || null;
+        } catch {
+          extensionConnected = false;
+        }
+      }
+
+      const consistent =
+        extensionConnected && extensionVersion
+          ? extensionVersion === serverVersion
+          : extensionConnected
+            ? false
+            : null;
+
+      reply.status(HTTP_STATUS.OK).send({
+        status: 'ok',
+        versions: {
+          server: serverVersion,
+          schema: serverVersion,
+          extension: extensionVersion,
+        },
+        extensionConnected,
+        consistent,
+      });
+    });
   }
 
   // ============================================================
@@ -267,6 +307,8 @@ export class Server {
     });
 
     // MCP GET endpoint (SSE stream)
+    // Do not set/flush headers here — StreamableHTTPServerTransport owns the response headers.
+    // Pre-writing headers caused ERR_HTTP_HEADERS_SENT and multi-GB stderr logs.
     this.fastify.get('/mcp', async (request, reply) => {
       const sessionId = request.headers['mcp-session-id'] as string | undefined;
       const transport = sessionId
@@ -278,17 +320,14 @@ export class Server {
         return;
       }
 
-      reply.raw.setHeader('Content-Type', 'text/event-stream');
-      reply.raw.setHeader('Cache-Control', 'no-cache');
-      reply.raw.setHeader('Connection', 'keep-alive');
-      reply.raw.flushHeaders();
-
       try {
+        reply.hijack();
         await transport.handleRequest(request.raw, reply.raw);
-        if (!reply.sent) {
-          reply.hijack();
-        }
       } catch (error) {
+        request.log.error(
+          { err: error instanceof Error ? error.message : String(error), sessionId },
+          'SSE GET /mcp failed',
+        );
         if (!reply.raw.writableEnded) {
           reply.raw.end();
         }

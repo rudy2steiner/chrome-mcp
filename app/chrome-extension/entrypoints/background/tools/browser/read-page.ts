@@ -50,8 +50,10 @@ class ReadPageTool extends BaseBrowserToolExecutor {
       const standardTips =
         "If the specific element you need is missing from the returned data, use the 'screenshot' tool to capture the current viewport and confirm the element's on-screen coordinates. Also note: 'markedElements' are user-marked elements and have the highest priority when choosing targets.";
 
-      const explicit = await this.tryGetTab(args?.tabId);
-      const tab = explicit || (await this.getActiveTabOrThrowInWindow(args?.windowId));
+      const { tab, meta: tabMeta } = await this.resolveTargetTab({
+        tabId: args?.tabId,
+        windowId: args?.windowId,
+      });
       if (!tab.id)
         return createErrorResponse(ERROR_MESSAGES.TAB_NOT_FOUND + ': Active tab has no ID');
 
@@ -133,24 +135,28 @@ class ReadPageTool extends BaseBrowserToolExecutor {
       };
 
       // Unified base payload structure - consistent keys for stable contract
-      const basePayload: Record<string, any> = {
-        success: true,
-        filter: filter || 'all',
-        pageContent,
-        tips: standardTips,
-        viewport: treeOk ? resp.viewport : { width: null, height: null, dpr: null },
-        stats: stats || { processed: 0, included: 0, durationMs: 0 },
-        refMapCount: refCount,
-        sparse: treeOk ? isSparse : false,
-        depth: requestedDepth ?? null,
-        focus: focusRefId ? { refId: focusRefId, found: treeOk } : null,
-        markedElements,
-        elements: [],
-        count: 0,
-        fallbackUsed: false,
-        fallbackSource: null,
-        reason: null,
-      };
+      const basePayload: Record<string, any> = this.withTabMeta(
+        {
+          success: true,
+          filter: filter || 'all',
+          pageContent,
+          tips: standardTips,
+          viewport: treeOk ? resp.viewport : { width: null, height: null, dpr: null },
+          stats: stats || { processed: 0, included: 0, durationMs: 0 },
+          refMapCount: refCount,
+          sparse: treeOk ? isSparse : false,
+          depth: requestedDepth ?? null,
+          focus: focusRefId ? { refId: focusRefId, found: treeOk } : null,
+          markedElements,
+          elements: [],
+          count: 0,
+          fallbackUsed: false,
+          fallbackSource: null,
+          reason: null,
+          tabId: tab.id,
+        },
+        tabMeta,
+      );
 
       // Normal path: return tree
       if (treeOk && !isSparse) {

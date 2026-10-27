@@ -1086,16 +1086,16 @@ class DemoRecorderTool extends BaseBrowserToolExecutor {
     };
   }
 
-  private async resolveTargetTab(tabId?: number): Promise<chrome.tabs.Tab | undefined> {
-    if (typeof tabId === 'number') {
-      try {
-        return await chrome.tabs.get(tabId);
-      } catch {
-        return undefined;
+  private async resolveTargetTab(tabId?: unknown): Promise<chrome.tabs.Tab | undefined> {
+    try {
+      const { tab } = await super.resolveTargetTab({ tabId });
+      return tab;
+    } catch (error) {
+      if (tabId !== undefined && tabId !== null && tabId !== '') {
+        throw error;
       }
+      return undefined;
     }
-    const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    return active;
   }
 
   async execute(args: DemoRecorderParams): Promise<ToolResult> {

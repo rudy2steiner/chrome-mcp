@@ -568,7 +568,8 @@ export const TOOL_SCHEMAS: Tool[] = [
   },
   {
     name: TOOL_NAMES.BROWSER.SWITCH_TAB,
-    description: 'Switch to a specific browser tab',
+    description:
+      'Switch to a specific browser tab. Set focusWindow:false to activate the tab without bringing its window to the foreground.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -579,6 +580,11 @@ export const TOOL_SCHEMAS: Tool[] = [
         windowId: {
           type: 'number',
           description: 'The ID of the window where the tab is located.',
+        },
+        focusWindow: {
+          type: 'boolean',
+          description:
+            "Whether to focus the tab's window after switching. Default: true. Set false to avoid stealing OS focus from the user.",
         },
       },
       required: ['tabId'],

@@ -9,6 +9,25 @@
 
 ## [Unreleased]
 
+## [v1.0.37]
+
+### Fixed
+
+- 在 native server 边界按 schema 规整 MCP 工具参数，避免客户端把 `tabId` 等数字序列化成字符串后静默打到错误标签页。
+- 显式指定 `tabId` 解析失败时直接报错，禁止回退到最后聚焦窗口的活动标签页。
+- 工具响应统一返回 `requestedTabId` / `resolvedTabId` / `fellBack`（回退时附带 `warnings`）。
+- GET `/mcp` 不再预先写 SSE 响应头（修复 `ERR_HTTP_HEADERS_SENT` 与 stderr 日志暴涨）；收紧 stderr 日志保留份数与体积上限。
+- `chrome_switch_tab` 支持 `focusWindow:false`，切换标签但不抢系统焦点。
+
+### Added
+
+- `GET /health` 回显 server / schema / extension 版本与一致性标志。
+- `get_windows_and_tabs` 标注省略 `tabId` 时的回退目标。
+
+### Changed
+
+- 将 native bridge、Chrome 扩展与 shared 包版本提升至 `1.0.37`。
+
 ## [v1.0.36]
 
 ### 新增

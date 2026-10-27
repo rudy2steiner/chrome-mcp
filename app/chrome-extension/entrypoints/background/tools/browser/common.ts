@@ -1,5 +1,5 @@
 import { createErrorResponse, ToolResult } from '@/common/tool-handler';
-import { BaseBrowserToolExecutor } from '../base-browser';
+import { BaseBrowserToolExecutor, type TabResolutionMeta } from '../base-browser';
 import { TOOL_NAMES } from 'agent-chrome-mcp-shared';
 import { captureFrameOnAction, isAutoCaptureActive } from './gif-recorder';
 import { isDemoRecordingActive, notifyDemoAction } from './demo-recorder';
@@ -80,9 +80,7 @@ class NavigateTool extends BaseBrowserToolExecutor {
       // Handle refresh option first
       if (refresh) {
         console.log('Refreshing current active tab');
-        const explicit = await this.tryGetTab(tabId);
-        // Get target tab (explicit or active in provided window)
-        const targetTab = explicit || (await this.getActiveTabOrThrowInWindow(windowId));
+        const { tab: targetTab, meta: tabMeta } = await this.resolveTargetTab({ tabId, windowId });
         if (!targetTab.id) return createErrorResponse('No target tab found to refresh');
         await chrome.tabs.reload(targetTab.id);
 
@@ -94,21 +92,16 @@ class NavigateTool extends BaseBrowserToolExecutor {
         // Trigger auto-capture on refresh
         await this.triggerAutoCapture(updatedTab.id!, updatedTab.url);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Successfully refreshed current tab',
-                tabId: updatedTab.id,
-                windowId: updatedTab.windowId,
-                url: updatedTab.url,
-              }),
-            },
-          ],
-          isError: false,
-        };
+        return this.jsonWithTabMeta(
+          {
+            success: true,
+            message: 'Successfully refreshed current tab',
+            tabId: updatedTab.id,
+            windowId: updatedTab.windowId,
+            url: updatedTab.url,
+          },
+          tabMeta,
+        );
       }
 
       // Validate that url is provided when not refreshing
@@ -118,8 +111,7 @@ class NavigateTool extends BaseBrowserToolExecutor {
 
       // Handle history navigation: url="back" or url="forward"
       if (url === 'back' || url === 'forward') {
-        const explicitTab = await this.tryGetTab(tabId);
-        const targetTab = explicitTab || (await this.getActiveTabOrThrowInWindow(windowId));
+        const { tab: targetTab, meta: tabMeta } = await this.resolveTargetTab({ tabId, windowId });
         if (!targetTab.id) {
           return createErrorResponse('No target tab found for history navigation');
         }
@@ -143,21 +135,16 @@ class NavigateTool extends BaseBrowserToolExecutor {
         // Trigger auto-capture on history navigation
         await this.triggerAutoCapture(updatedTab.id!, updatedTab.url);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: `Successfully navigated ${url} in browser history`,
-                tabId: updatedTab.id,
-                windowId: updatedTab.windowId,
-                url: updatedTab.url,
-              }),
-            },
-          ],
-          isError: false,
-        };
+        return this.jsonWithTabMeta(
+          {
+            success: true,
+            message: `Successfully navigated ${url} in browser history`,
+            tabId: updatedTab.id,
+            windowId: updatedTab.windowId,
+            url: updatedTab.url,
+          },
+          tabMeta,
+        );
       }
 
       // 1. Check if URL is already open
@@ -271,7 +258,14 @@ class NavigateTool extends BaseBrowserToolExecutor {
         return best.tab;
       };
 
-      const explicitTab = await this.tryGetTab(tabId);
+      // Explicit tabId must resolve; never silently fall back to URL match / active tab.
+      let explicitTab: chrome.tabs.Tab | null = null;
+      let tabMeta: TabResolutionMeta | undefined;
+      if (tabId !== undefined && tabId !== null && tabId !== '') {
+        const resolved = await this.resolveTargetTab({ tabId, windowId });
+        explicitTab = resolved.tab;
+        tabMeta = resolved.meta;
+      }
       const existingTab = explicitTab || pickBestMatch(url, candidateTabs);
       if (existingTab?.id !== undefined) {
         console.log(
@@ -294,17 +288,18 @@ class NavigateTool extends BaseBrowserToolExecutor {
         // Trigger auto-capture on existing tab activation
         await this.triggerAutoCapture(updatedTab.id!, updatedTab.url);
 
+        const payload = {
+          success: true,
+          message: 'Activated existing tab',
+          tabId: updatedTab.id,
+          windowId: updatedTab.windowId,
+          url: updatedTab.url,
+        };
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Activated existing tab',
-                tabId: updatedTab.id,
-                windowId: updatedTab.windowId,
-                url: updatedTab.url,
-              }),
+              text: JSON.stringify(tabMeta ? this.withTabMeta(payload, tabMeta) : payload),
             },
           ],
           isError: false,
@@ -654,8 +649,10 @@ class CloseTabsTool extends BaseBrowserToolExecutor {
 export const closeTabsTool = new CloseTabsTool();
 
 interface SwitchTabToolParams {
-  tabId: number;
-  windowId?: number;
+  tabId: number | string;
+  windowId?: number | string;
+  /** When false, activate the tab but do not focus its window. Default: true */
+  focusWindow?: boolean;
 }
 
 /**
@@ -665,33 +662,50 @@ class SwitchTabTool extends BaseBrowserToolExecutor {
   name = TOOL_NAMES.BROWSER.SWITCH_TAB;
 
   async execute(args: SwitchTabToolParams): Promise<ToolResult> {
-    const { tabId, windowId } = args;
+    const focusWindow = args.focusWindow !== false;
 
-    console.log(`Attempting to switch to tab ID: ${tabId} in window ID: ${windowId}`);
+    console.log(
+      `Attempting to switch to tab ID: ${args.tabId} in window ID: ${args.windowId} (focusWindow=${focusWindow})`,
+    );
 
     try {
-      if (windowId !== undefined) {
-        await chrome.windows.update(windowId, { focused: true });
+      const { tab, meta: tabMeta } = await this.resolveTargetTab({
+        tabId: args.tabId,
+        windowId: args.windowId,
+      });
+      if (!tab.id) {
+        return createErrorResponse(`Tab not found: ${args.tabId}`);
       }
-      await chrome.tabs.update(tabId, { active: true });
 
-      const updatedTab = await chrome.tabs.get(tabId);
+      // Activate tab first; optionally focus its window (default true).
+      await chrome.tabs.update(tab.id, { active: true });
+      if (focusWindow && typeof tab.windowId === 'number') {
+        await chrome.windows.update(tab.windowId, { focused: true });
+      } else if (
+        args.windowId !== undefined &&
+        args.windowId !== null &&
+        args.windowId !== '' &&
+        focusWindow
+      ) {
+        const windowId = this.coerceId(args.windowId, 'windowId');
+        if (windowId !== undefined) {
+          await chrome.windows.update(windowId, { focused: true });
+        }
+      }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              success: true,
-              message: `Successfully switched to tab ID: ${tabId}`,
-              tabId: updatedTab.id,
-              windowId: updatedTab.windowId,
-              url: updatedTab.url,
-            }),
-          },
-        ],
-        isError: false,
-      };
+      const updatedTab = await chrome.tabs.get(tab.id);
+
+      return this.jsonWithTabMeta(
+        {
+          success: true,
+          message: `Successfully switched to tab ID: ${tab.id}`,
+          tabId: updatedTab.id,
+          windowId: updatedTab.windowId,
+          url: updatedTab.url,
+          focusWindow,
+        },
+        tabMeta,
+      );
     } catch (error) {
       if (chrome.runtime.lastError) {
         console.error(`Chrome API Error: ${chrome.runtime.lastError.message}`, error);

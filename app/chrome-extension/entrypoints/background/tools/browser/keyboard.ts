@@ -35,8 +35,10 @@ class KeyboardTool extends BaseBrowserToolExecutor {
     }
 
     try {
-      const explicit = await this.tryGetTab(args.tabId);
-      const tab = explicit || (await this.getActiveTabOrThrowInWindow(args.windowId));
+      const { tab, meta: tabMeta } = await this.resolveTargetTab({
+        tabId: args.tabId,
+        windowId: args.windowId,
+      });
       if (!tab.id) {
         return createErrorResponse(ERROR_MESSAGES.TAB_NOT_FOUND + ': Active tab has no ID');
       }
@@ -120,20 +122,16 @@ class KeyboardTool extends BaseBrowserToolExecutor {
         return createErrorResponse(result.error);
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              success: true,
-              message: result.message || 'Keyboard operation successful',
-              targetElement: result.targetElement,
-              results: result.results,
-            }),
-          },
-        ],
-        isError: false,
-      };
+      return this.jsonWithTabMeta(
+        {
+          success: true,
+          message: result.message || 'Keyboard operation successful',
+          targetElement: result.targetElement,
+          results: result.results,
+          tabId: tab.id,
+        },
+        tabMeta,
+      );
     } catch (error) {
       console.error('Error in keyboard operation:', error);
       return createErrorResponse(

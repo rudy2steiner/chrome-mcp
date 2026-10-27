@@ -122,9 +122,12 @@ class ScreenshotTool extends BaseBrowserToolExecutor {
 
     console.log(`Starting screenshot with options:`, args);
 
-    // Resolve target tab (explicit or active)
-    const explicit = await this.tryGetTab(args.tabId);
-    let tab = explicit || (await this.getActiveTabOrThrowInWindow(args.windowId));
+    // Resolve target tab (explicit tabId hard-fails; no silent active-tab fallback)
+    const { tab: resolvedTab, meta: tabMeta } = await this.resolveTargetTab({
+      tabId: args.tabId,
+      windowId: args.windowId,
+    });
+    let tab = resolvedTab;
 
     // Check URL restrictions
     if (
@@ -375,22 +378,17 @@ class ScreenshotTool extends BaseBrowserToolExecutor {
 
     this.logInfo('Screenshot completed!');
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            success: true,
-            message: `Screenshot [${name}] captured successfully`,
-            tabId: tab.id,
-            url: tab.url,
-            name: name,
-            ...results,
-          }),
-        },
-      ],
-      isError: false,
-    };
+    return this.jsonWithTabMeta(
+      {
+        success: true,
+        message: `Screenshot [${name}] captured successfully`,
+        tabId: tab.id,
+        url: tab.url,
+        name: name,
+        ...results,
+      },
+      tabMeta,
+    );
   }
 
   /**

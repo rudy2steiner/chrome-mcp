@@ -413,12 +413,18 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
         return createErrorResponse('Parameter [code] is required');
       }
 
-      // Resolve target tab
-      const tab = await this.resolveTargetTab(args.tabId);
-      if (!tab) {
-        return createErrorResponse(
-          typeof args.tabId === 'number' ? `Tab not found: ${args.tabId}` : 'No active tab found',
-        );
+      // Resolve target tab (explicit tabId hard-fails; no silent active-tab fallback)
+      let tab: chrome.tabs.Tab;
+      let tabMeta: import('../base-browser').TabResolutionMeta;
+      try {
+        const resolved = await this.resolveTargetTab({
+          tabId: args.tabId,
+          windowId: (args as { windowId?: unknown }).windowId,
+        });
+        tab = resolved.tab;
+        tabMeta = resolved.meta;
+      } catch (error) {
+        return createErrorResponse(error instanceof Error ? error.message : String(error));
       }
 
       if (!tab.id) {
@@ -438,12 +444,12 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
       const cdpResult = await executeViaCdp(tabId, code, options);
 
       if (cdpResult.ok) {
-        return this.buildSuccessResponse(tabId, cdpResult, startTime);
+        return this.buildSuccessResponse(tabId, cdpResult, startTime, warnings, tabMeta);
       }
 
       // If not a debugger conflict, return the CDP error
       if (cdpResult.error.kind !== 'debugger_conflict') {
-        return this.buildErrorResponse(tabId, cdpResult, startTime);
+        return this.buildErrorResponse(tabId, cdpResult, startTime, warnings, tabMeta);
       }
 
       // Debugger conflict - fallback to scripting API
@@ -454,10 +460,10 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
       const scriptingResult = await executeViaScripting(tabId, code, options);
 
       if (scriptingResult.ok) {
-        return this.buildSuccessResponse(tabId, scriptingResult, startTime, warnings);
+        return this.buildSuccessResponse(tabId, scriptingResult, startTime, warnings, tabMeta);
       }
 
-      return this.buildErrorResponse(tabId, scriptingResult, startTime, warnings);
+      return this.buildErrorResponse(tabId, scriptingResult, startTime, warnings, tabMeta);
     } catch (error) {
       console.error('JavaScriptTool.execute error:', error);
       return createErrorResponse(
@@ -466,22 +472,12 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
     }
   }
 
-  private async resolveTargetTab(tabId?: number): Promise<chrome.tabs.Tab | null> {
-    if (typeof tabId === 'number') {
-      return this.tryGetTab(tabId);
-    }
-    try {
-      return await this.getActiveTabOrThrow();
-    } catch {
-      return null;
-    }
-  }
-
   private buildSuccessResponse(
     tabId: number,
     result: ExecutionSuccess,
     startTime: number,
     warnings?: string[],
+    tabMeta?: import('../base-browser').TabResolutionMeta,
   ): ToolResult {
     const payload: JavaScriptToolResult = {
       success: true,
@@ -494,8 +490,12 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
       metrics: { elapsedMs: Math.round(performance.now() - startTime) },
     };
 
+    const body = tabMeta
+      ? this.withTabMeta(payload as unknown as Record<string, unknown>, tabMeta)
+      : payload;
+
     return {
-      content: [{ type: 'text', text: JSON.stringify(payload) }],
+      content: [{ type: 'text', text: JSON.stringify(body) }],
       isError: false,
     };
   }
@@ -505,6 +505,7 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
     result: ExecutionFailure,
     startTime: number,
     warnings?: string[],
+    tabMeta?: import('../base-browser').TabResolutionMeta,
   ): ToolResult {
     const payload: JavaScriptToolResult = {
       success: false,
@@ -515,8 +516,12 @@ class JavaScriptTool extends BaseBrowserToolExecutor {
       metrics: { elapsedMs: Math.round(performance.now() - startTime) },
     };
 
+    const body = tabMeta
+      ? this.withTabMeta(payload as unknown as Record<string, unknown>, tabMeta)
+      : payload;
+
     return {
-      content: [{ type: 'text', text: JSON.stringify(payload) }],
+      content: [{ type: 'text', text: JSON.stringify(body) }],
       isError: true,
     };
   }

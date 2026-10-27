@@ -4,6 +4,13 @@ import { TIMEOUTS, ERROR_MESSAGES } from '@/common/constants';
 
 const PING_TIMEOUT_MS = 300;
 
+export type TabResolutionMeta = {
+  requestedTabId: number | null;
+  resolvedTabId: number;
+  fellBack: boolean;
+  warnings?: string[];
+};
+
 /**
  * Base class for browser tool executors
  */
@@ -112,15 +119,140 @@ export abstract class BaseBrowserToolExecutor implements ToolExecutor {
   }
 
   /**
-   * Try to get an existing tab by id. Returns null when not found.
+   * Coerce a tab/window id that may arrive as a numeric string from MCP clients.
+   * Throws when the value is present but not a finite number.
    */
-  protected async tryGetTab(tabId?: number): Promise<chrome.tabs.Tab | null> {
-    if (typeof tabId !== 'number') return null;
+  protected coerceId(value: unknown, label: string): number | undefined {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim() !== '') {
+      const n = Number(value);
+      if (Number.isFinite(n)) return n;
+    }
+    throw new Error(`Invalid ${label}: ${JSON.stringify(value)} (expected number)`);
+  }
+
+  /**
+   * Try to get an existing tab by id. Returns null when absent or not found.
+   * Invalid non-numeric values throw (do not silently ignore).
+   */
+  protected async tryGetTab(tabId?: unknown): Promise<chrome.tabs.Tab | null> {
+    const id = this.coerceId(tabId, 'tabId');
+    if (id === undefined) return null;
     try {
-      return await chrome.tabs.get(tabId);
+      return await chrome.tabs.get(id);
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Resolve the tab a tool should operate on.
+   * - Explicit tabId: must resolve; failure throws (no silent fallback).
+   * - No tabId: use active tab in windowId / last-focused window; fellBack=true.
+   */
+  protected async resolveTargetTab(args: {
+    tabId?: unknown;
+    windowId?: unknown;
+  }): Promise<{ tab: chrome.tabs.Tab; meta: TabResolutionMeta }> {
+    const requestedTabId = this.coerceId(args.tabId, 'tabId');
+    const windowId = this.coerceId(args.windowId, 'windowId');
+
+    if (requestedTabId !== undefined) {
+      try {
+        const tab = await chrome.tabs.get(requestedTabId);
+        if (!tab?.id) {
+          throw new Error(`Tab not found: ${requestedTabId}`);
+        }
+        return {
+          tab,
+          meta: {
+            requestedTabId,
+            resolvedTabId: tab.id,
+            fellBack: false,
+          },
+        };
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Tab not found: ${requestedTabId} (${reason.includes('Tab not found') ? 'does not exist or no permission' : reason})`,
+        );
+      }
+    }
+
+    const tab = await this.getActiveTabOrThrowInWindow(windowId);
+    if (!tab.id) throw new Error('Active tab not found');
+    const warning =
+      windowId !== undefined
+        ? `No tabId provided; operated on active tab ${tab.id} in window ${windowId}`
+        : `No tabId provided; operated on last-focused window active tab ${tab.id}`;
+    return {
+      tab,
+      meta: {
+        requestedTabId: null,
+        resolvedTabId: tab.id,
+        fellBack: true,
+        warnings: [warning],
+      },
+    };
+  }
+
+  /**
+   * Merge tab resolution metadata into a tool JSON payload.
+   */
+  protected withTabMeta<T extends Record<string, unknown>>(
+    payload: T,
+    meta: TabResolutionMeta,
+  ): T & TabResolutionMeta {
+    const existingWarnings = Array.isArray((payload as { warnings?: unknown }).warnings)
+      ? ((payload as { warnings: string[] }).warnings as string[])
+      : [];
+    const warnings = [...existingWarnings, ...(meta.warnings || [])];
+    return {
+      ...payload,
+      requestedTabId: meta.requestedTabId,
+      resolvedTabId: meta.resolvedTabId,
+      fellBack: meta.fellBack,
+      ...(warnings.length ? { warnings } : {}),
+    };
+  }
+
+  protected jsonWithTabMeta(
+    payload: Record<string, unknown>,
+    meta: TabResolutionMeta,
+    isError = false,
+  ): ToolResult {
+    return {
+      content: [{ type: 'text', text: JSON.stringify(this.withTabMeta(payload, meta)) }],
+      isError,
+    };
+  }
+
+  /**
+   * Inject tab resolution meta into an existing ToolResult JSON payload.
+   */
+  protected attachTabMeta(result: ToolResult, meta: TabResolutionMeta): ToolResult {
+    if (result?.isError) return result;
+    try {
+      const block = result?.content?.[0] as { type?: string; text?: string } | undefined;
+      if (block?.type === 'text' && typeof block.text === 'string') {
+        const parsed = JSON.parse(block.text);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return {
+            ...result,
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(this.withTabMeta(parsed as Record<string, unknown>, meta)),
+              },
+            ],
+          };
+        }
+      }
+    } catch {
+      // leave payload unchanged if it is not JSON
+    }
+    return result;
   }
 
   /**
