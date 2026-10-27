@@ -29,6 +29,14 @@ jobs:
         with:
           node-version: '24'
 
+      # Stage-only NPM_TOKEN requires `npm stage publish` (CLI >= 11.15.0).
+      # Node 24's bundled npm may be older; pin a known-good CLI for staging.
+      - name: Ensure npm CLI supports staged publishing
+        run: |
+          npm install -g npm@11.15.0
+          npm --version
+          npm stage --help >/dev/null
+
       - name: Setup pnpm
         run: |
           corepack enable
@@ -77,7 +85,8 @@ jobs:
         if: steps.npm_packages.outputs.shared_exists != 'true' || steps.npm_packages.outputs.native_exists != 'true'
         run: |
           if [ -z "${NPM_TOKEN}" ]; then
-            echo "NPM_TOKEN is required because at least one npm package version is not published yet." >&2
+            echo "NPM_TOKEN is required because at least one npm package version is not on the registry yet." >&2
+            echo "Use a granular token with Read and write (stage only), then approve with 2FA." >&2
             echo "Add it in GitHub: Settings > Secrets and variables > Actions > New repository secret." >&2
             echo "Required secret name: NPM_TOKEN" >&2
             exit 1
@@ -89,9 +98,30 @@ jobs:
           npm config set registry https://registry.npmjs.org
           npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
 
-      - name: Publish shared package to npm
+      # NPM_TOKEN is stage-only: it cannot `npm publish` new versions.
+      # Stage first; a maintainer with 2FA must later run `npm stage approve <id> --otp ...`.
+      # See: https://docs.npmjs.com/staged-publishing/
+      - name: Stage shared package on npm
+        id: stage_shared
         if: steps.npm_packages.outputs.shared_exists != 'true'
-        run: pnpm --filter agent-chrome-mcp-shared publish --access public --no-git-checks --registry=https://registry.npmjs.org
+        working-directory: packages/shared
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "Staging agent-chrome-mcp-shared@${VERSION} (not live until approved)"
+          set +e
+          OUTPUT="$(npm stage publish --access public --registry=https://registry.npmjs.org 2>&1)"
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            if echo "$OUTPUT" | grep -Eqi 'already staged|E409|conflict|exists'; then
+              echo "Shared ${VERSION} appears already staged; continuing."
+            else
+              exit "$STATUS"
+            fi
+          fi
+          echo "staged=true" >> "$GITHUB_OUTPUT"
 
       - name: Prepare native package metadata for npm
         run: |
@@ -124,9 +154,27 @@ jobs:
           console.log(`Packed ${pkg.name}@${pkg.version} depends on agent-chrome-mcp-shared@${shared}`);
           NODE
 
-      - name: Publish native bridge to npm
+      - name: Stage native bridge on npm
+        id: stage_native
         if: steps.npm_packages.outputs.native_exists != 'true'
-        run: pnpm --filter agent-chrome-mcp publish --access public --no-git-checks --registry=https://registry.npmjs.org
+        working-directory: app/native-server
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "Staging agent-chrome-mcp@${VERSION} (not live until approved)"
+          set +e
+          OUTPUT="$(npm stage publish --access public --registry=https://registry.npmjs.org 2>&1)"
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            if echo "$OUTPUT" | grep -Eqi 'already staged|E409|conflict|exists'; then
+              echo "Native ${VERSION} appears already staged; continuing."
+            else
+              exit "$STATUS"
+            fi
+          fi
+          echo "staged=true" >> "$GITHUB_OUTPUT"
 
       - name: Prepare release assets
         run: |
@@ -170,3 +218,14 @@ jobs:
           body: |
             Changelog: https://github.com/rudy2steiner/chrome-mcp/blob/master/docs/CHANGELOG.md
             Quick Start: https://github.com/rudy2steiner/chrome-mcp#-quick-start
+
+            ## npm staged publishing
+            CI uses a **stage-only** npm token (`npm stage publish`). Staged versions are **not** installable until a maintainer with 2FA approves them:
+
+            ```bash
+            npm stage list agent-chrome-mcp-shared
+            npm stage list agent-chrome-mcp
+            npm stage approve <stage-id> --otp <otp>
+            ```
+
+            Docs: https://docs.npmjs.com/staged-publishing/
